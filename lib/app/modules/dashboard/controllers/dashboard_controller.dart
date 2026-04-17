@@ -2,14 +2,14 @@ import 'package:get/get.dart';
 import '../../properties/controllers/properties_controller.dart';
 import '../../tenants/controllers/tenants_controller.dart';
 import '../../rentals/controllers/rentals_controller.dart';
-import '../../payments/controllers/payments_controller.dart';
+import '../../payments/controllers/payment_controller.dart';
 
 class DashboardController extends GetxController {
   final PropertiesController propertiesController =
       Get.find<PropertiesController>();
   final TenantsController tenantsController = Get.find<TenantsController>();
   final RentalsController rentalsController = Get.find<RentalsController>();
-  final PaymentsController paymentsController = Get.find<PaymentsController>();
+  final PaymentController paymentsController = Get.find<PaymentController>();
 
   int get totalProperties => propertiesController.properties.length;
 

@@ -2,7 +2,7 @@ import 'package:get/get.dart';
 import 'package:rental_management/app/models/payment_model.dart';
 import '../../../services/service_local_storage.dart';
 
-class PaymentsController extends GetxController {
+class PaymentController extends GetxController {
   final payments = <Payment>[].obs;
 
   @override

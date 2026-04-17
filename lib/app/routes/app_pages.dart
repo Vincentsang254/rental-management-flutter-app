@@ -1,4 +1,6 @@
 import 'package:get/get.dart';
+import 'package:rental_management/app/modules/payments/bindings/payments_binding.dart';
+import 'package:rental_management/app/modules/payments/views/payment_view.dart';
 import 'package:rental_management/app/widgets/custom_bottom_tabs.dart';
 import '../modules/dashboard/bindings/dashboard_binding.dart';
 import '../modules/dashboard/views/dashboard_view.dart';
@@ -25,6 +27,11 @@ class AppPages {
       name: Routes.PROPERTIES,
       page: () => const PropertiesView(),
       binding: PropertiesBinding(),
+    ),
+    GetPage(
+      name: Routes.PAYMENTS,
+      page: () => const PaymentView(),
+      binding: PaymentsBinding(),
     ),
     GetPage(
       name: Routes.TENANTS,
