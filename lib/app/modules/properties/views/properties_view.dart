@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:rental_management/app/models/property_model.dart';
+import 'package:rental_management/app/widgets/custom_app_bar.dart';
 import '../controllers/properties_controller.dart';
 
 class PropertiesView extends StatelessWidget {
   const PropertiesView({super.key});
+
+  String formatMoney(double value) {
+    return "KES ${value.toStringAsFixed(0)}";
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -12,11 +17,8 @@ class PropertiesView extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
-      appBar: AppBar(
-        title: const Text('Properties'),
-        backgroundColor: Colors.deepPurple,
-        centerTitle: true,
-      ),
+      appBar: const CustomAppBar(title: "Properties"),
+
       body: Obx(() {
         if (controller.properties.isEmpty) {
           return const Center(child: Text("No properties added yet"));
@@ -34,24 +36,45 @@ class PropertiesView extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 4,
+                    offset: Offset(0, 2),
+                  ),
+                ],
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.home),
+                  const Icon(Icons.home, color: Colors.deepPurple),
                   const SizedBox(width: 12),
+
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          property.name,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
+                          property.houseNumber,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
                         ),
-                        Text(property.location),
+                        const SizedBox(height: 4),
+                        Text(
+                          formatMoney(property.rentAmount),
+                          style: TextStyle(color: Colors.grey.shade600),
+                        ),
                       ],
                     ),
                   ),
-                  Text("KES ${property.rentAmount}"),
+
+                  IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.redAccent),
+                    onPressed: () {
+                      controller.deleteProperty(property.id);
+                    },
+                  ),
                 ],
               ),
             );
@@ -61,9 +84,14 @@ class PropertiesView extends StatelessWidget {
 
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.all(16),
-        child: ElevatedButton(
+        child: ElevatedButton.icon(
+          icon: const Icon(Icons.add),
+          label: const Text("Add Property"),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.deepPurple,
+            padding: const EdgeInsets.symmetric(vertical: 14),
+          ),
           onPressed: () => _showAddPropertySheet(context),
-          child: const Text("Add Property"),
         ),
       ),
     );
@@ -72,8 +100,7 @@ class PropertiesView extends StatelessWidget {
   void _showAddPropertySheet(BuildContext context) {
     final controller = Get.find<PropertiesController>();
 
-    final nameController = TextEditingController();
-    final locationController = TextEditingController();
+    final houseController = TextEditingController();
     final rentController = TextEditingController();
 
     Get.bottomSheet(
@@ -81,53 +108,74 @@ class PropertiesView extends StatelessWidget {
         padding: MediaQuery.of(context).viewInsets,
         child: Container(
           padding: const EdgeInsets.all(16),
-          color: Colors.white,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text("Add Property"),
+              const Text(
+                "Add Property",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+
               const SizedBox(height: 12),
 
               TextField(
-                controller: nameController,
-                decoration: const InputDecoration(labelText: "Name"),
+                controller: houseController,
+                decoration: const InputDecoration(
+                  labelText: "House Number",
+                  border: OutlineInputBorder(),
+                ),
               ),
-              TextField(
-                controller: locationController,
-                decoration: const InputDecoration(labelText: "Location"),
-              ),
+
+              const SizedBox(height: 10),
+
               TextField(
                 controller: rentController,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: "Rent"),
+                decoration: const InputDecoration(
+                  labelText: "Rent Amount",
+                  border: OutlineInputBorder(),
+                ),
               ),
 
               const SizedBox(height: 16),
 
-              ElevatedButton(
-                onPressed: () {
-                  final name = nameController.text.trim();
-                  final location = locationController.text.trim();
-                  final rent = double.tryParse(rentController.text.trim());
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.deepPurple,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  onPressed: () {
+                    final house = houseController.text.trim();
+                    final rent =
+                        double.tryParse(rentController.text.trim()) ?? 0;
 
-                  if (name.isEmpty || location.isEmpty || rent == null) {
-                    Get.snackbar("Error", "Fill all fields correctly");
-                    return;
-                  }
+                    if (house.isEmpty || rent <= 0) {
+                      Get.snackbar(
+                        "Error",
+                        "Enter valid house and rent",
+                        snackPosition: SnackPosition.BOTTOM,
+                      );
+                      return;
+                    }
 
-                  controller.addProperty(
-                    Property(
-                      id: DateTime.now().millisecondsSinceEpoch.toString(),
-                      name: name,
-                      location: location,
-                      rentAmount: rent,
-                    ),
-                  );
+                    controller.addProperty(
+                      Property(
+                        id: DateTime.now().millisecondsSinceEpoch.toString(),
+                        houseNumber: house,
+                        rentAmount: rent,
+                      ),
+                    );
 
-                  FocusManager.instance.primaryFocus?.unfocus();
-                  Get.back();
-                },
-                child: const Text("Save"),
+                    Get.back();
+                  },
+                  child: const Text("Save Property"),
+                ),
               ),
             ],
           ),

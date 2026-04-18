@@ -15,10 +15,10 @@ Future<void> main() async {
   await LocalStorageService.init();
 
   // 🔥 Register all controllers globally
-  Get.put(PropertiesController(), permanent: true);
-  Get.put(TenantsController(), permanent: true);
-  Get.put(RentalsController(), permanent: true);
-  Get.put(DashboardController(), permanent: true);
+Get.put(PropertiesController(), permanent: true);
+Get.put(TenantsController(), permanent: true);
+Get.put(RentalsController(), permanent: true);   // ✅ BEFORE Dashboard
+Get.put(DashboardController(), permanent: true); // ✅ LAST
 
   // Run the app
   runApp(const RentalManagementApp());

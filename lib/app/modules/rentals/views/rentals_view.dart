@@ -2,25 +2,36 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:rental_management/app/models/property_model.dart';
 import 'package:rental_management/app/models/rental_model.dart';
+import 'package:rental_management/app/models/tenant_model.dart';
+import 'package:rental_management/app/widgets/custom_app_bar.dart';
 import '../controllers/rentals_controller.dart';
 import '../../properties/controllers/properties_controller.dart';
+import '../../tenants/controllers/tenants_controller.dart';
 
 class RentalsView extends StatelessWidget {
   const RentalsView({super.key});
+
+  String formatMoney(double value) {
+    return "KES ${value.toStringAsFixed(0)}";
+  }
 
   @override
   Widget build(BuildContext context) {
     final rentalsController = Get.find<RentalsController>();
     final propertiesController = Get.find<PropertiesController>();
+    final tenantsController = Get.find<TenantsController>();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Rentals')),
+      backgroundColor: Colors.grey.shade100,
+      appBar: const CustomAppBar(title: "Rentals"),
+
       body: Obx(() {
         if (rentalsController.rentals.isEmpty) {
           return const Center(child: Text("No rentals"));
         }
 
         return ListView.builder(
+          padding: const EdgeInsets.all(16),
           itemCount: rentalsController.rentals.length,
           itemBuilder: (context, index) {
             final rental = rentalsController.rentals[index];
@@ -29,18 +40,98 @@ class RentalsView extends StatelessWidget {
               (p) => p.id == rental.propertyId,
               orElse: () => Property(
                 id: '',
-                name: 'Unknown',
-                location: '',
-                rentAmount: 0,
+                houseNumber: 'Unknown Property',
+                rentAmount: 0.0,
               ),
             );
 
-            return ListTile(
-              title: Text("${rental.tenantName} - ${property.name}"),
-              subtitle: Text("KES ${rental.rentAmount}"),
-              trailing: IconButton(
-                icon: const Icon(Icons.delete),
-                onPressed: () => rentalsController.deleteRental(rental.id),
+            final tenant = tenantsController.tenants.firstWhere(
+              (t) => t.id == rental.tenantId,
+              orElse: () => Tenant(id: '', name: 'Unknown Tenant', phone: ''),
+            );
+
+            return Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: rental.isActive ? Colors.white : Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.person, color: Colors.deepPurple),
+                      const SizedBox(width: 10),
+
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              tenant.name,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(property.houseNumber),
+                            Text(formatMoney(rental.rentAmount)),
+                          ],
+                        ),
+                      ),
+
+                      // 💰 Paid Toggle
+                      IconButton(
+                        icon: Icon(
+                          rental.isPaid
+                              ? Icons.check_circle
+                              : Icons.radio_button_unchecked,
+                          color: rental.isPaid ? Colors.green : Colors.grey,
+                        ),
+                        onPressed: () {
+                          rentalsController.togglePayment(rental.id);
+                        },
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // STATUS
+                      Text(
+                        rental.isActive ? "Active" : "Vacated",
+                        style: TextStyle(
+                          color: rental.isActive ? Colors.green : Colors.red,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+
+                      Row(
+                        children: [
+                          // 🏠 Vacate
+                          if (rental.isActive)
+                            TextButton(
+                              onPressed: () {
+                                rentalsController.vacateRental(rental.id);
+                              },
+                              child: const Text("Vacate"),
+                            ),
+
+                          // 🗑 Delete
+                          IconButton(
+                            icon: const Icon(Icons.delete, color: Colors.red),
+                            onPressed: () {
+                              rentalsController.deleteRental(rental.id);
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
               ),
             );
           },
@@ -50,6 +141,10 @@ class RentalsView extends StatelessWidget {
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.all(16),
         child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.deepPurple,
+            padding: const EdgeInsets.symmetric(vertical: 14),
+          ),
           onPressed: () => _showAddRentalSheet(context),
           child: const Text("Add Rental"),
         ),
@@ -60,63 +155,119 @@ class RentalsView extends StatelessWidget {
   void _showAddRentalSheet(BuildContext context) {
     final rentalsController = Get.find<RentalsController>();
     final propertiesController = Get.find<PropertiesController>();
+    final tenantsController = Get.find<TenantsController>();
 
     Property? selectedProperty;
-    final nameController = TextEditingController();
+    Tenant? selectedTenant;
+    final rentController = TextEditingController();
 
     Get.bottomSheet(
-      Padding(
-        padding: MediaQuery.of(context).viewInsets,
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          color: Colors.white,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text("Add Rental"),
-              const SizedBox(height: 12),
-
-              DropdownButtonFormField<Property>(
-                items: propertiesController.properties
-                    .map((p) => DropdownMenuItem(value: p, child: Text(p.name)))
-                    .toList(),
-                onChanged: (val) => selectedProperty = val,
-                decoration: const InputDecoration(labelText: "Property"),
+      StatefulBuilder(
+        builder: (context, setState) {
+          return Padding(
+            padding: MediaQuery.of(context).viewInsets,
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
               ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    "Add Rental",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
 
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(labelText: "Tenant Name"),
-              ),
+                  const SizedBox(height: 12),
 
-              const SizedBox(height: 16),
-
-              ElevatedButton(
-                onPressed: () {
-                  final name = nameController.text.trim();
-
-                  if (selectedProperty == null || name.isEmpty) {
-                    Get.snackbar("Error", "Fill all fields");
-                    return;
-                  }
-
-                  rentalsController.addRental(
-                    Rental(
-                      id: DateTime.now().millisecondsSinceEpoch.toString(),
-                      propertyId: selectedProperty!.id,
-                      tenantName: name,
-                      startDate: DateTime.now().toIso8601String(),
-                      rentAmount: selectedProperty!.rentAmount,
+                  DropdownButtonFormField<Property>(
+                    items: propertiesController.properties
+                        .map(
+                          (p) => DropdownMenuItem(
+                            value: p,
+                            child: Text(p.houseNumber),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (val) => setState(() => selectedProperty = val),
+                    decoration: const InputDecoration(
+                      labelText: "Property",
+                      border: OutlineInputBorder(),
                     ),
-                  );
+                  ),
 
-                  Get.back();
-                },
-                child: const Text("Save"),
+                  const SizedBox(height: 10),
+
+                  DropdownButtonFormField<Tenant>(
+                    items: tenantsController.tenants
+                        .map(
+                          (t) =>
+                              DropdownMenuItem(value: t, child: Text(t.name)),
+                        )
+                        .toList(),
+                    onChanged: (val) => setState(() => selectedTenant = val),
+                    decoration: const InputDecoration(
+                      labelText: "Tenant",
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  TextField(
+                    controller: rentController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: "Monthly Rent (KES)",
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.deepPurple,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                      onPressed: () {
+                        final rent = double.tryParse(
+                          rentController.text.trim(),
+                        );
+
+                        if (selectedProperty == null ||
+                            selectedTenant == null ||
+                            rent == null ||
+                            rent <= 0) {
+                          Get.snackbar("Error", "Fill all fields correctly");
+                          return;
+                        }
+
+                        rentalsController.addRental(
+                          Rental(
+                            id: DateTime.now().millisecondsSinceEpoch
+                                .toString(),
+                            propertyId: selectedProperty!.id,
+                            tenantId: selectedTenant!.id,
+                            rentAmount: rent,
+                            startDate: DateTime.now(),
+                          ),
+                        );
+
+                        Get.back();
+                      },
+                      child: const Text("Save Rental"),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
       isScrollControlled: true,
     );

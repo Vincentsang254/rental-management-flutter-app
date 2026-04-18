@@ -2,26 +2,22 @@ class Tenant {
   final String id;
   final String name;
   final String phone;
-  final String house;
 
-  Tenant({
-    required this.id,
-    required this.name,
-    required this.phone,
-    required this.house,
-  });
+  Tenant({required this.id, required this.name, required this.phone});
 
-  Map<String, dynamic> toMap() => {
-    'id': id,
-    'name': name,
-    'phone': phone,
-    'house': house,
-  };
+  Map<String, dynamic> toMap() => {'id': id, 'name': name, 'phone': phone};
 
   factory Tenant.fromMap(Map<String, dynamic> map) => Tenant(
-    id: map['id'] ?? '',
-    name: map['name'] ?? '',
-    phone: map['phone'] ?? '',
-    house: map['house'] ?? '',
+    id: map['id']?.toString() ?? '',
+    name: map['name']?.toString() ?? '',
+    phone: map['phone']?.toString() ?? '',
   );
+
+  Tenant copyWith({String? id, String? name, String? phone}) {
+    return Tenant(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      phone: phone ?? this.phone,
+    );
+  } 
 }

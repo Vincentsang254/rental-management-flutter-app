@@ -6,5 +6,4 @@ abstract class Routes {
   static const PROPERTIES = '/properties';
   static const TENANTS = '/tenants';
   static const RENTALS = '/rentals';
-  static const PAYMENTS = '/payments';
 }
