@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:rental_management/app/models/tenant_model.dart';
+import 'package:rental_management/app/widgets/custom_snackbar.dart';
 import '../../../services/service_local_storage.dart';
 
 class TenantsController extends GetxController {
@@ -37,13 +38,13 @@ class TenantsController extends GetxController {
   void addTenant(Tenant tenant) {
     // Validate name
     if (tenant.name.trim().isEmpty) {
-      Get.snackbar("Error", "Tenant name is required");
+      AppSnackbar.error("Tenant name is required");
       return;
     }
 
     // Validate phone
     if (tenant.phone.trim().isEmpty) {
-      Get.snackbar("Error", "Phone number is required");
+      AppSnackbar.error("Phone number is required");
       return;
     }
 
@@ -51,20 +52,20 @@ class TenantsController extends GetxController {
     final exists = tenants.any((t) => t.phone.trim() == tenant.phone.trim());
 
     if (exists) {
-      Get.snackbar("Error", "Tenant with this phone already exists");
+      AppSnackbar.error("Tenant with this phone already exists");
       return;
     }
 
     tenants.add(tenant);
 
-    Get.snackbar("Success", "Tenant added successfully");
+    AppSnackbar.success("Tenant added successfully");
   }
 
   /// Delete tenant
   void deleteTenant(String id) {
     tenants.removeWhere((t) => t.id == id);
 
-    Get.snackbar("Success", "Tenant deleted");
+    AppSnackbar.success("Tenant deleted");
   }
 
   /// 🔥 Helper: get tenant by ID

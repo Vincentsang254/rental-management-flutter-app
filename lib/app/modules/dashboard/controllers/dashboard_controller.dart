@@ -22,21 +22,22 @@ class DashboardController extends GetxController {
   /// 💰 Total expected monthly rent (active rentals only)
   double get totalMonthlyExpected => rentalsController.rentals
       .where((r) => r.isActive)
-      .fold(0.0, (sum, r) => sum + r.rentAmount);
+      .fold(0.0, (sum, r) => sum + r.expectedAmount);
 
-  /// 💰 Total collected THIS MONTH (simple: isPaid = true)
+  /// 💰 Total collected THIS MONTH (simple: amountPaid = true)
   double get totalCollectedThisMonth => rentalsController.rentals
-      .where((r) => r.isActive && r.isPaid)
-      .fold(0.0, (sum, r) => sum + r.rentAmount);
+      .where((r) => r.isActive && r.amountPaid)
+      .fold(0.0, (sum, r) => sum + r.expectedAmount);
 
   /// ❗ Pending rent THIS MONTH
   double get totalPendingThisMonth => rentalsController.rentals
-      .where((r) => r.isActive && !r.isPaid)
-      .fold(0.0, (sum, r) => sum + r.rentAmount);
+      .where((r) => r.isActive && !r.amountPaid)
+      .fold(0.0, (sum, r) => sum + r.expectedAmount);
 
   /// 🚨 Rentals not paid this month
-  int get unpaidRentalsThisMonth =>
-      rentalsController.rentals.where((r) => r.isActive && !r.isPaid).length;
+  int get unpaidRentalsThisMonth => rentalsController.rentals
+      .where((r) => r.isActive && !r.amountPaid)
+      .length;
 
   /// 📊 Collection rate
   double get collectionRate {
@@ -47,7 +48,7 @@ class DashboardController extends GetxController {
 
   void resetMonthlyPayments() {
     rentalsController.rentals.value = rentalsController.rentals.map((r) {
-      return r.copyWith(isPaid: false);
+      return r.copyWith(amountPaid: false);
     }).toList();
   }
 }

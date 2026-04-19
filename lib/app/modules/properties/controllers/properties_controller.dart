@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import 'package:rental_management/app/models/property_model.dart';
 import 'package:rental_management/app/services/service_local_storage.dart';
+import 'package:rental_management/app/widgets/custom_snackbar.dart';
 
 class PropertiesController extends GetxController {
   final properties = <Property>[].obs;
@@ -33,13 +34,13 @@ class PropertiesController extends GetxController {
   void addProperty(Property property) {
     // ✅ Validate house number
     if (property.houseNumber.trim().isEmpty) {
-      Get.snackbar("Error", "House number is required");
+      AppSnackbar.error("House number is required");
       return;
     }
 
     // ✅ Validate rent
     if (property.rentAmount <= 0) {
-      Get.snackbar("Error", "Rent must be greater than 0");
+      AppSnackbar.error("Rent must be greater than 0");
       return;
     }
 
@@ -51,13 +52,13 @@ class PropertiesController extends GetxController {
     );
 
     if (exists) {
-      Get.snackbar("Error", "House already exists");
+      AppSnackbar.error("Property not added");
       return;
     }
 
     properties.add(property);
 
-    Get.snackbar("Success", "Property added successfully");
+    AppSnackbar.success("Property added successfully");
   }
 
   /// Delete property

@@ -75,7 +75,7 @@ class RentalsView extends StatelessWidget {
                               ),
                             ),
                             Text(property.houseNumber),
-                            Text(formatMoney(rental.rentAmount)),
+                            Text(formatMoney(rental.expectedAmount)),
                           ],
                         ),
                       ),
@@ -83,10 +83,10 @@ class RentalsView extends StatelessWidget {
                       // 💰 Paid Toggle
                       IconButton(
                         icon: Icon(
-                          rental.isPaid
+                          rental.amountPaid
                               ? Icons.check_circle
                               : Icons.radio_button_unchecked,
-                          color: rental.isPaid ? Colors.green : Colors.grey,
+                          color: rental.amountPaid ? Colors.green : Colors.grey,
                         ),
                         onPressed: () {
                           rentalsController.togglePayment(rental.id);
@@ -253,7 +253,7 @@ class RentalsView extends StatelessWidget {
                                 .toString(),
                             propertyId: selectedProperty!.id,
                             tenantId: selectedTenant!.id,
-                            rentAmount: rent,
+                            expectedAmount: rent,
                             startDate: DateTime.now(),
                           ),
                         );

@@ -1,6 +1,6 @@
-
 import 'package:get/get.dart';
 import 'package:rental_management/app/models/rental_model.dart';
+import 'package:rental_management/app/widgets/custom_snackbar.dart';
 import '../../../services/service_local_storage.dart';
 
 class RentalsController extends GetxController {
@@ -20,9 +20,7 @@ class RentalsController extends GetxController {
     final saved = LocalStorageService.loadList('rentals');
 
     try {
-      rentals.assignAll(
-        saved.map((e) => Rental.fromMap(e)).toList(),
-      );
+      rentals.assignAll(saved.map((e) => Rental.fromMap(e)).toList());
     } catch (e) {
       rentals.clear();
     }
@@ -44,7 +42,7 @@ class RentalsController extends GetxController {
     );
 
     if (propertyOccupied) {
-      Get.snackbar("Error", "Property is already occupied");
+      AppSnackbar.error("Property is already occupied");
       return;
     }
 
@@ -54,20 +52,20 @@ class RentalsController extends GetxController {
     );
 
     if (tenantActive) {
-      Get.snackbar("Error", "Tenant already has an active rental");
+      AppSnackbar.error("Tenant already has an active rental");
       return;
     }
 
     rentals.add(rental);
 
-    Get.snackbar("Success", "Rental assigned successfully");
+    AppSnackbar.success("Rental assigned successfully");
   }
 
   /// Delete rental
   void deleteRental(String id) {
     rentals.removeWhere((r) => r.id == id);
 
-    Get.snackbar("Success", "Rental deleted");
+    AppSnackbar.success("Rental deleted");
   }
 
   /// 🔥 Mark rent paid/unpaid
@@ -78,7 +76,7 @@ class RentalsController extends GetxController {
 
     final rental = rentals[index];
 
-    rentals[index] = rental.copyWith(isPaid: !rental.isPaid);
+    rentals[index] = rental.copyWith(amountPaid: !rental.amountPaid);
   }
 
   /// 🔥 Vacate property
@@ -91,7 +89,7 @@ class RentalsController extends GetxController {
 
     rentals[index] = rental.copyWith(isActive: false);
 
-    Get.snackbar("Success", "Property vacated");
+    AppSnackbar.success("Property vacated");
   }
 
   /// 🔥 Helper: get rentals by property
@@ -103,16 +101,11 @@ class RentalsController extends GetxController {
 
   /// 🔥 Helper: get rentals by tenant
   List<Rental> getByTenant(String tenantId) {
-    return rentals
-        .where((r) => r.tenantId == tenantId && r.isActive)
-        .toList();
+    return rentals.where((r) => r.tenantId == tenantId && r.isActive).toList();
   }
 
   /// 🔥 Check if tenant has active rental
   bool isTenantActive(String tenantId) {
-    return rentals.any(
-      (r) => r.tenantId == tenantId && r.isActive,
-    );
+    return rentals.any((r) => r.tenantId == tenantId && r.isActive);
   }
 }
-

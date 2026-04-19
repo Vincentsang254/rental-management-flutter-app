@@ -3,57 +3,59 @@ class Rental {
   final String propertyId;
   final String tenantId;
 
-  final double rentAmount;
+  final double
+  expectedAmount; //was changed from "rentAmount" to "expectedAmount" for clarity
   final DateTime startDate;
 
   final bool isActive;
-  final bool isPaid; // KEEP for simplicity (manual toggle)
+  final bool
+  amountPaid; // was changed from "isPaid" to "amountPaid" for clarity
 
   Rental({
     required this.id,
     required this.propertyId,
     required this.tenantId,
-    required this.rentAmount,
+    required this.expectedAmount,
     required this.startDate,
     this.isActive = true,
-    this.isPaid = false,
+    this.amountPaid = false,
   });
 
   Map<String, dynamic> toMap() => {
     'id': id,
     'propertyId': propertyId,
     'tenantId': tenantId,
-    'rentAmount': rentAmount,
+    'expectedAmount': expectedAmount,
     'startDate': startDate.toIso8601String(),
     'isActive': isActive,
-    'isPaid': isPaid,
+    'amountPaid': amountPaid,
   };
 
   factory Rental.fromMap(Map<String, dynamic> map) => Rental(
     id: map['id']?.toString() ?? '',
     propertyId: map['propertyId']?.toString() ?? '',
     tenantId: map['tenantId']?.toString() ?? '',
-    rentAmount: (map['rentAmount'] ?? 0).toDouble(),
+    expectedAmount: (map['expectedAmount'] ?? 0).toDouble(),
     startDate: DateTime.tryParse(map['startDate'] ?? '') ?? DateTime.now(),
     isActive: map['isActive'] ?? true,
-    isPaid: map['isPaid'] ?? false,
+    amountPaid: map['amountPaid'] ?? false,
   );
 
   Rental copyWith({
     String? id,
     String? propertyId,
     String? tenantId,
-    double? rentAmount,
+    double? expectedAmount,
     DateTime? startDate,
     bool? isActive,
-    bool? isPaid,
+    bool? amountPaid,
   }) => Rental(
     id: id ?? this.id,
     propertyId: propertyId ?? this.propertyId,
     tenantId: tenantId ?? this.tenantId,
-    rentAmount: rentAmount ?? this.rentAmount,
+    expectedAmount: expectedAmount ?? this.expectedAmount,
     startDate: startDate ?? this.startDate,
     isActive: isActive ?? this.isActive,
-    isPaid: isPaid ?? this.isPaid,
+    amountPaid: amountPaid ?? this.amountPaid,
   );
 }
