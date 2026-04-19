@@ -16,15 +16,18 @@ class RentalsView extends StatelessWidget {
     return "KES ${value.toStringAsFixed(0)}";
   }
 
-  /// 🔥 Payment status UI helper
-  (Color, IconData) getStatusUI(String status) {
+  /// Payment UI helper
+  Map<String, dynamic> getStatusUI(String status) {
     switch (status) {
       case "paid":
-        return (Colors.green, Icons.check_circle);
+        return {"color": Colors.green, "icon": Icons.check_circle};
       case "partial":
-        return (Colors.orange, Icons.timelapse);
+        return {"color": Colors.orange, "icon": Icons.timelapse};
       default:
-        return (Colors.red, Icons.radio_button_unchecked);
+        return {
+          "color": Colors.red,
+          "icon": Icons.radio_button_unchecked,
+        };
     }
   }
 
@@ -67,13 +70,15 @@ class RentalsView extends StatelessWidget {
               orElse: () => Tenant(id: '', name: 'Unknown Tenant', phone: ''),
             );
 
-            final (statusColor, statusIcon) = getStatusUI(rental.amountPaid);
+            final statusUI = getStatusUI(rental.amountPaid);
 
             return Container(
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: rental.isActive ? Colors.white : Colors.grey.shade300,
+                color: rental.isActive
+                    ? Colors.white
+                    : Colors.grey.shade300,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
@@ -99,9 +104,11 @@ class RentalsView extends StatelessWidget {
                         ),
                       ),
 
-                      /// 🔥 Payment Status Button
                       IconButton(
-                        icon: Icon(statusIcon, color: statusColor),
+                        icon: Icon(
+                          statusUI["icon"],
+                          color: statusUI["color"],
+                        ),
                         onPressed: () {
                           rentalsController.togglePayment(rental.id);
                         },
@@ -114,7 +121,6 @@ class RentalsView extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      /// STATUS TEXT
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -130,7 +136,7 @@ class RentalsView extends StatelessWidget {
                           Text(
                             rental.amountPaid.toUpperCase(),
                             style: TextStyle(
-                              color: statusColor,
+                              color: statusUI["color"],
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -139,7 +145,6 @@ class RentalsView extends StatelessWidget {
 
                       Row(
                         children: [
-                          /// 🏠 Vacate
                           if (rental.isActive)
                             TextButton(
                               onPressed: () {
@@ -148,7 +153,6 @@ class RentalsView extends StatelessWidget {
                               child: const Text("Vacate"),
                             ),
 
-                          /// 🗑 Delete
                           IconButton(
                             icon: const Icon(Icons.delete, color: Colors.red),
                             onPressed: () {
@@ -219,7 +223,8 @@ class RentalsView extends StatelessWidget {
                           ),
                         )
                         .toList(),
-                    onChanged: (val) => setState(() => selectedProperty = val),
+                    onChanged: (val) =>
+                        setState(() => selectedProperty = val),
                     decoration: const InputDecoration(
                       labelText: "Property",
                       border: OutlineInputBorder(),
@@ -231,8 +236,10 @@ class RentalsView extends StatelessWidget {
                   DropdownButtonFormField<Tenant>(
                     items: tenantsController.tenants
                         .map(
-                          (t) =>
-                              DropdownMenuItem(value: t, child: Text(t.name)),
+                          (t) => DropdownMenuItem(
+                            value: t,
+                            child: Text(t.name),
+                          ),
                         )
                         .toList(),
                     onChanged: (val) => setState(() => selectedTenant = val),
@@ -263,9 +270,8 @@ class RentalsView extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
                       onPressed: () {
-                        final rent = double.tryParse(
-                          rentController.text.trim(),
-                        );
+                        final rent =
+                            double.tryParse(rentController.text.trim());
 
                         if (selectedProperty == null ||
                             selectedTenant == null ||
@@ -277,12 +283,16 @@ class RentalsView extends StatelessWidget {
 
                         rentalsController.addRental(
                           Rental(
-                            id: DateTime.now().millisecondsSinceEpoch
+                            id: DateTime.now()
+                                .millisecondsSinceEpoch
                                 .toString(),
                             propertyId: selectedProperty!.id,
                             tenantId: selectedTenant!.id,
                             expectedAmount: rent,
                             startDate: DateTime.now(),
+                            month:
+                                "${DateTime.now().year}-${DateTime.now().month}",
+                            amountPaid: "unpaid",
                           ),
                         );
 

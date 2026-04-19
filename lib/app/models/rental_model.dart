@@ -7,7 +7,12 @@ class Rental {
   final DateTime startDate;
 
   final bool isActive;
-  final String amountPaid; // now a status string
+
+  /// "paid", "unpaid"
+  final String amountPaid;
+
+  /// 📅 NEW: month tracking
+  final String month;
 
   Rental({
     required this.id,
@@ -15,6 +20,7 @@ class Rental {
     required this.tenantId,
     required this.expectedAmount,
     required this.startDate,
+    required this.month,
     this.isActive = true,
     this.amountPaid = "unpaid",
   });
@@ -27,41 +33,33 @@ class Rental {
     'startDate': startDate.toIso8601String(),
     'isActive': isActive,
     'amountPaid': amountPaid,
+    'month': month,
   };
 
   factory Rental.fromMap(Map<String, dynamic> map) => Rental(
     id: map['id']?.toString() ?? '',
     propertyId: map['propertyId']?.toString() ?? '',
     tenantId: map['tenantId']?.toString() ?? '',
-    expectedAmount:
-        double.tryParse(map['expectedAmount']?.toString() ?? '0') ?? 0,
+    expectedAmount: (map['expectedAmount'] ?? 0).toDouble(),
     startDate: DateTime.tryParse(map['startDate'] ?? '') ?? DateTime.now(),
     isActive: map['isActive'] ?? true,
-    amountPaid: map['amountPaid']?.toString() ?? "unpaid",
+    amountPaid: map['amountPaid'] ?? "unpaid",
+    month: map['month'] ?? _currentMonth(),
   );
 
-  Rental copyWith({
-    String? id,
-    String? propertyId,
-    String? tenantId,
-    double? expectedAmount,
-    DateTime? startDate,
-    bool? isActive,
-    String? amountPaid,
-  }) => Rental(
-    id: id ?? this.id,
-    propertyId: propertyId ?? this.propertyId,
-    tenantId: tenantId ?? this.tenantId,
-    expectedAmount: expectedAmount ?? this.expectedAmount,
-    startDate: startDate ?? this.startDate,
+  Rental copyWith({String? amountPaid, bool? isActive}) => Rental(
+    id: id,
+    propertyId: propertyId,
+    tenantId: tenantId,
+    expectedAmount: expectedAmount,
+    startDate: startDate,
+    month: month,
     isActive: isActive ?? this.isActive,
     amountPaid: amountPaid ?? this.amountPaid,
   );
 
-  /// 🔥 Helpers (VERY IMPORTANT)
-  bool get isPaid => amountPaid == "paid";
-
-  bool get isPartial => amountPaid == "partial";
-
-  bool get isUnpaid => amountPaid == "unpaid";
+  static String _currentMonth() {
+    final now = DateTime.now();
+    return "${now.year}-${now.month.toString().padLeft(2, '0')}";
+  }
 }

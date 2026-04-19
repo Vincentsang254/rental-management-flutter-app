@@ -23,32 +23,6 @@ class DashboardView extends StatelessWidget {
           padding: const EdgeInsets.all(20),
           child: Column(
             children: [
-              /// 🔄 Reset Month Button
-              Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Get.defaultDialog(
-                      title: "New Month",
-                      middleText: "Reset all payment statuses to unpaid?",
-                      textConfirm: "Yes",
-                      textCancel: "Cancel",
-                      confirmTextColor: Colors.white,
-                      onConfirm: () {
-                        controller.resetMonthlyPayments();
-                        Get.back();
-                      },
-                    );
-                  },
-                  icon: const Icon(Icons.refresh),
-                  label: const Text("Start New Month"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.deepPurple,
-                    minimumSize: const Size(double.infinity, 50),
-                  ),
-                ),
-              ),
-
               /// 📊 Overview
               _buildStatCard(
                 title: "Total Properties",

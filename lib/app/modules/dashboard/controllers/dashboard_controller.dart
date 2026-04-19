@@ -7,11 +7,9 @@ class DashboardController extends GetxController {
   final PropertiesController propertiesController =
       Get.find<PropertiesController>();
 
-  final TenantsController tenantsController =
-      Get.find<TenantsController>();
+  final TenantsController tenantsController = Get.find<TenantsController>();
 
-  final RentalsController rentalsController =
-      Get.find<RentalsController>();
+  final RentalsController rentalsController = Get.find<RentalsController>();
 
   /// 📊 Counts
   int get totalProperties => propertiesController.properties.length;
@@ -50,13 +48,5 @@ class DashboardController extends GetxController {
   double get collectionRate {
     if (totalMonthlyExpected == 0) return 0;
     return (totalCollectedThisMonth / totalMonthlyExpected) * 100;
-  }
-
-  /// 🔄 Reset month
-  void resetMonthlyPayments() {
-    rentalsController.rentals.value =
-        rentalsController.rentals.map((r) {
-      return r.copyWith(amountPaid: "unpaid");
-    }).toList();
   }
 }
