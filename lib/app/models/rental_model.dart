@@ -3,13 +3,11 @@ class Rental {
   final String propertyId;
   final String tenantId;
 
-  final double
-  expectedAmount; //was changed from "rentAmount" to "expectedAmount" for clarity
+  final double expectedAmount;
   final DateTime startDate;
 
   final bool isActive;
-  final bool
-  amountPaid; // was changed from "isPaid" to "amountPaid" for clarity
+  final String amountPaid; // now a status string
 
   Rental({
     required this.id,
@@ -18,7 +16,7 @@ class Rental {
     required this.expectedAmount,
     required this.startDate,
     this.isActive = true,
-    this.amountPaid = false,
+    this.amountPaid = "unpaid",
   });
 
   Map<String, dynamic> toMap() => {
@@ -35,10 +33,11 @@ class Rental {
     id: map['id']?.toString() ?? '',
     propertyId: map['propertyId']?.toString() ?? '',
     tenantId: map['tenantId']?.toString() ?? '',
-    expectedAmount: (map['expectedAmount'] ?? 0).toDouble(),
+    expectedAmount:
+        double.tryParse(map['expectedAmount']?.toString() ?? '0') ?? 0,
     startDate: DateTime.tryParse(map['startDate'] ?? '') ?? DateTime.now(),
     isActive: map['isActive'] ?? true,
-    amountPaid: map['amountPaid'] ?? false,
+    amountPaid: map['amountPaid']?.toString() ?? "unpaid",
   );
 
   Rental copyWith({
@@ -48,7 +47,7 @@ class Rental {
     double? expectedAmount,
     DateTime? startDate,
     bool? isActive,
-    bool? amountPaid,
+    String? amountPaid,
   }) => Rental(
     id: id ?? this.id,
     propertyId: propertyId ?? this.propertyId,
@@ -58,4 +57,11 @@ class Rental {
     isActive: isActive ?? this.isActive,
     amountPaid: amountPaid ?? this.amountPaid,
   );
+
+  /// 🔥 Helpers (VERY IMPORTANT)
+  bool get isPaid => amountPaid == "paid";
+
+  bool get isPartial => amountPaid == "partial";
+
+  bool get isUnpaid => amountPaid == "unpaid";
 }

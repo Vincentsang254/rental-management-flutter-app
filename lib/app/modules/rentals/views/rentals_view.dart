@@ -4,6 +4,7 @@ import 'package:rental_management/app/models/property_model.dart';
 import 'package:rental_management/app/models/rental_model.dart';
 import 'package:rental_management/app/models/tenant_model.dart';
 import 'package:rental_management/app/widgets/custom_app_bar.dart';
+import 'package:rental_management/app/widgets/custom_snackbar.dart';
 import '../controllers/rentals_controller.dart';
 import '../../properties/controllers/properties_controller.dart';
 import '../../tenants/controllers/tenants_controller.dart';
@@ -13,6 +14,18 @@ class RentalsView extends StatelessWidget {
 
   String formatMoney(double value) {
     return "KES ${value.toStringAsFixed(0)}";
+  }
+
+  /// 🔥 Payment status UI helper
+  (Color, IconData) getStatusUI(String status) {
+    switch (status) {
+      case "paid":
+        return (Colors.green, Icons.check_circle);
+      case "partial":
+        return (Colors.orange, Icons.timelapse);
+      default:
+        return (Colors.red, Icons.radio_button_unchecked);
+    }
   }
 
   @override
@@ -26,6 +39,10 @@ class RentalsView extends StatelessWidget {
       appBar: const CustomAppBar(title: "Rentals"),
 
       body: Obx(() {
+        if (rentalsController.isLoading.value) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
         if (rentalsController.rentals.isEmpty) {
           return const Center(child: Text("No rentals"));
         }
@@ -49,6 +66,8 @@ class RentalsView extends StatelessWidget {
               (t) => t.id == rental.tenantId,
               orElse: () => Tenant(id: '', name: 'Unknown Tenant', phone: ''),
             );
+
+            final (statusColor, statusIcon) = getStatusUI(rental.amountPaid);
 
             return Container(
               margin: const EdgeInsets.only(bottom: 12),
@@ -80,14 +99,9 @@ class RentalsView extends StatelessWidget {
                         ),
                       ),
 
-                      // 💰 Paid Toggle
+                      /// 🔥 Payment Status Button
                       IconButton(
-                        icon: Icon(
-                          rental.amountPaid
-                              ? Icons.check_circle
-                              : Icons.radio_button_unchecked,
-                          color: rental.amountPaid ? Colors.green : Colors.grey,
-                        ),
+                        icon: Icon(statusIcon, color: statusColor),
                         onPressed: () {
                           rentalsController.togglePayment(rental.id);
                         },
@@ -100,18 +114,32 @@ class RentalsView extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // STATUS
-                      Text(
-                        rental.isActive ? "Active" : "Vacated",
-                        style: TextStyle(
-                          color: rental.isActive ? Colors.green : Colors.red,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      /// STATUS TEXT
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            rental.isActive ? "Active" : "Vacated",
+                            style: TextStyle(
+                              color: rental.isActive
+                                  ? Colors.green
+                                  : Colors.red,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            rental.amountPaid.toUpperCase(),
+                            style: TextStyle(
+                              color: statusColor,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
 
                       Row(
                         children: [
-                          // 🏠 Vacate
+                          /// 🏠 Vacate
                           if (rental.isActive)
                             TextButton(
                               onPressed: () {
@@ -120,7 +148,7 @@ class RentalsView extends StatelessWidget {
                               child: const Text("Vacate"),
                             ),
 
-                          // 🗑 Delete
+                          /// 🗑 Delete
                           IconButton(
                             icon: const Icon(Icons.delete, color: Colors.red),
                             onPressed: () {
@@ -243,7 +271,7 @@ class RentalsView extends StatelessWidget {
                             selectedTenant == null ||
                             rent == null ||
                             rent <= 0) {
-                          Get.snackbar("Error", "Fill all fields correctly");
+                          AppSnackbar.error("Fill all fields correctly");
                           return;
                         }
 

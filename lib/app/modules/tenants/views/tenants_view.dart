@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:rental_management/app/models/tenant_model.dart';
 import 'package:rental_management/app/widgets/custom_app_bar.dart';
@@ -47,7 +48,34 @@ class TenantsView extends StatelessWidget {
                   tenant.name,
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
-                subtitle: Text(tenant.phone),
+
+                /// 📱 PHONE + COPY FEATURE
+                subtitle: Row(
+                  children: [
+                    Expanded(child: Text(tenant.phone)),
+
+                    IconButton(
+                      icon: const Icon(
+                        Icons.copy,
+                        size: 18,
+                        color: Colors.grey,
+                      ),
+                      onPressed: () {
+                        Clipboard.setData(
+                          ClipboardData(text: tenant.phone),
+                        );
+
+                        Get.snackbar(
+                          "Copied",
+                          "Phone number copied",
+                          snackPosition: SnackPosition.BOTTOM,
+                          duration: const Duration(seconds: 2),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+
                 trailing: IconButton(
                   icon: const Icon(Icons.delete, color: Colors.red),
                   onPressed: () {
@@ -105,84 +133,81 @@ class TenantsView extends StatelessWidget {
     final phoneController = TextEditingController();
 
     Get.bottomSheet(
-      StatefulBuilder(
-        builder: (context, setState) {
-          return Padding(
-            padding: MediaQuery.of(context).viewInsets,
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      Padding(
+        padding: MediaQuery.of(context).viewInsets,
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                "Add Tenant",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    "Add Tenant",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+
+              const SizedBox(height: 12),
+
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(
+                  labelText: "Name",
+                  border: OutlineInputBorder(),
+                ),
+              ),
+
+              const SizedBox(height: 10),
+
+              TextField(
+                controller: phoneController,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(
+                  labelText: "Phone",
+                  border: OutlineInputBorder(),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.deepPurple,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
+                  onPressed: () {
+                    final name = nameController.text.trim();
+                    final phone = phoneController.text
+                        .replaceAll(" ", "")
+                        .trim();
 
-                  const SizedBox(height: 12),
+                    if (name.isEmpty || phone.isEmpty) {
+                      Get.snackbar("Error", "Fill all fields");
+                      return;
+                    }
 
-                  TextField(
-                    controller: nameController,
-                    decoration: const InputDecoration(
-                      labelText: "Name",
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  TextField(
-                    controller: phoneController,
-                    keyboardType: TextInputType.phone,
-                    decoration: const InputDecoration(
-                      labelText: "Phone",
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.deepPurple,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                    controller.addTenant(
+                      Tenant(
+                        id: DateTime.now()
+                            .millisecondsSinceEpoch
+                            .toString(),
+                        name: name,
+                        phone: phone,
                       ),
-                      onPressed: () {
-                        final name = nameController.text.trim();
-                        final phone = phoneController.text
-                            .replaceAll(" ", "")
-                            .trim();
+                    );
 
-                        if (name.isEmpty || phone.isEmpty) {
-                          Get.snackbar("Error", "Fill all fields");
-                          return;
-                        }
-
-                        controller.addTenant(
-                          Tenant(
-                            id: DateTime.now().millisecondsSinceEpoch
-                                .toString(),
-                            name: name,
-                            phone: phone,
-                          ),
-                        );
-
-                        Get.back();
-                      },
-                      child: const Text("Save Tenant"),
-                    ),
-                  ),
-                ],
+                    Get.back();
+                  },
+                  child: const Text("Save Tenant"),
+                ),
               ),
-            ),
-          );
-        },
+            ],
+          ),
+        ),
       ),
       isScrollControlled: true,
     );

@@ -12,7 +12,6 @@ class DashboardView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // ✅ FIX: use find instead of put
     final controller = Get.find<DashboardController>();
 
     return Scaffold(
@@ -24,12 +23,22 @@ class DashboardView extends StatelessWidget {
           padding: const EdgeInsets.all(20),
           child: Column(
             children: [
-              // 🔥 OPTIONAL: Reset Month Button
+              /// 🔄 Reset Month Button
               Padding(
                 padding: const EdgeInsets.only(bottom: 16),
                 child: ElevatedButton.icon(
                   onPressed: () {
-                    controller.resetMonthlyPayments();
+                    Get.defaultDialog(
+                      title: "New Month",
+                      middleText: "Reset all payment statuses to unpaid?",
+                      textConfirm: "Yes",
+                      textCancel: "Cancel",
+                      confirmTextColor: Colors.white,
+                      onConfirm: () {
+                        controller.resetMonthlyPayments();
+                        Get.back();
+                      },
+                    );
                   },
                   icon: const Icon(Icons.refresh),
                   label: const Text("Start New Month"),
@@ -40,6 +49,7 @@ class DashboardView extends StatelessWidget {
                 ),
               ),
 
+              /// 📊 Overview
               _buildStatCard(
                 title: "Total Properties",
                 value: controller.totalProperties.toString(),
@@ -65,8 +75,9 @@ class DashboardView extends StatelessWidget {
                 color: Colors.orange,
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
 
+              /// 💰 Financial
               _buildStatCard(
                 title: "Monthly Expected Rent",
                 value: formatMoney(controller.totalMonthlyExpected),
@@ -86,6 +97,15 @@ class DashboardView extends StatelessWidget {
               const SizedBox(height: 16),
 
               _buildStatCard(
+                title: "Partial Payments",
+                value: formatMoney(controller.totalPartialThisMonth),
+                icon: Icons.timelapse,
+                color: Colors.orange,
+              ),
+
+              const SizedBox(height: 16),
+
+              _buildStatCard(
                 title: "Pending This Month",
                 value: formatMoney(controller.totalPendingThisMonth),
                 icon: Icons.warning,
@@ -94,6 +114,7 @@ class DashboardView extends StatelessWidget {
 
               const SizedBox(height: 16),
 
+              /// ⚠️ Alerts
               _buildStatCard(
                 title: "Unpaid Rentals",
                 value: controller.unpaidRentalsThisMonth.toString(),
@@ -109,6 +130,16 @@ class DashboardView extends StatelessWidget {
                 icon: Icons.pie_chart,
                 color: Colors.indigo,
               ),
+
+              const SizedBox(height: 10),
+
+              /// 📊 Progress Bar
+              LinearProgressIndicator(
+                value: controller.collectionRate / 100,
+                minHeight: 8,
+                backgroundColor: Colors.grey.shade300,
+                color: Colors.indigo,
+              ),
             ],
           ),
         );
@@ -116,6 +147,7 @@ class DashboardView extends StatelessWidget {
     );
   }
 
+  /// 📦 Stat Card
   Widget _buildStatCard({
     required String title,
     required String value,

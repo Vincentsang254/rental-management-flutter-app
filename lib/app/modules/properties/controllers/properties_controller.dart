@@ -11,18 +11,23 @@ class PropertiesController extends GetxController {
     super.onInit();
     loadProperties();
 
-    // ✅ Auto-save whenever list changes
+    /// 🔄 Auto-save on changes
     ever(properties, (_) => saveProperties());
   }
 
-  /// Load saved properties from storage
+  /// 📥 Load properties
   void loadProperties() {
-    final saved = LocalStorageService.loadList('properties');
+    try {
+      final saved = LocalStorageService.loadList('properties');
 
-    properties.assignAll(saved.map((e) => Property.fromMap(e)).toList());
+      properties.assignAll(saved.map((e) => Property.fromMap(e)).toList());
+    } catch (e) {
+      properties.clear();
+      AppSnackbar.error("Failed to load properties");
+    }
   }
 
-  /// Save to local storage
+  /// 💾 Save properties
   void saveProperties() {
     LocalStorageService.saveList(
       'properties',
@@ -30,29 +35,29 @@ class PropertiesController extends GetxController {
     );
   }
 
-  /// Add property (with proper validation)
+  /// ➕ Add property
   void addProperty(Property property) {
-    // ✅ Validate house number
-    if (property.houseNumber.trim().isEmpty) {
+    final houseNumber = property.houseNumber.trim();
+
+    /// 🚫 Validate house number
+    if (houseNumber.isEmpty) {
       AppSnackbar.error("House number is required");
       return;
     }
 
-    // ✅ Validate rent
+    /// 🚫 Validate rent
     if (property.rentAmount <= 0) {
       AppSnackbar.error("Rent must be greater than 0");
       return;
     }
 
-    // ✅ Prevent duplicate house numbers (NOT id)
+    /// 🚫 Prevent duplicates
     final exists = properties.any(
-      (p) =>
-          p.houseNumber.toLowerCase().trim() ==
-          property.houseNumber.toLowerCase().trim(),
+      (p) => p.houseNumber.toLowerCase().trim() == houseNumber.toLowerCase(),
     );
 
     if (exists) {
-      AppSnackbar.error("Property not added");
+      AppSnackbar.error("Property already exists");
       return;
     }
 
@@ -61,14 +66,14 @@ class PropertiesController extends GetxController {
     AppSnackbar.success("Property added successfully");
   }
 
-  /// Delete property
+  /// 🗑 Delete property
   void deleteProperty(String id) {
     properties.removeWhere((p) => p.id == id);
 
-    Get.snackbar("Success", "Property deleted");
+    AppSnackbar.success("Property deleted");
   }
 
-  /// Helper: get property by ID
+  /// 🔍 Get property by ID
   Property? getById(String id) {
     try {
       return properties.firstWhere((p) => p.id == id);

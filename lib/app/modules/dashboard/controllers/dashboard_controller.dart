@@ -7,48 +7,56 @@ class DashboardController extends GetxController {
   final PropertiesController propertiesController =
       Get.find<PropertiesController>();
 
-  final TenantsController tenantsController = Get.find<TenantsController>();
+  final TenantsController tenantsController =
+      Get.find<TenantsController>();
 
-  final RentalsController rentalsController = Get.find<RentalsController>();
+  final RentalsController rentalsController =
+      Get.find<RentalsController>();
 
+  /// 📊 Counts
   int get totalProperties => propertiesController.properties.length;
 
   int get totalTenants => tenantsController.tenants.length;
 
-  /// Only ACTIVE rentals
   int get activeRentals =>
       rentalsController.rentals.where((r) => r.isActive).length;
 
-  /// 💰 Total expected monthly rent (active rentals only)
+  /// 💰 Expected monthly rent
   double get totalMonthlyExpected => rentalsController.rentals
       .where((r) => r.isActive)
       .fold(0.0, (sum, r) => sum + r.expectedAmount);
 
-  /// 💰 Total collected THIS MONTH (simple: amountPaid = true)
+  /// 💰 Collected (fully paid)
   double get totalCollectedThisMonth => rentalsController.rentals
-      .where((r) => r.isActive && r.amountPaid)
+      .where((r) => r.isActive && r.amountPaid == "paid")
       .fold(0.0, (sum, r) => sum + r.expectedAmount);
 
-  /// ❗ Pending rent THIS MONTH
+  /// ⚠️ Partial payments
+  double get totalPartialThisMonth => rentalsController.rentals
+      .where((r) => r.isActive && r.amountPaid == "partial")
+      .fold(0.0, (sum, r) => sum + r.expectedAmount);
+
+  /// ❗ Pending payments
   double get totalPendingThisMonth => rentalsController.rentals
-      .where((r) => r.isActive && !r.amountPaid)
+      .where((r) => r.isActive && r.amountPaid == "unpaid")
       .fold(0.0, (sum, r) => sum + r.expectedAmount);
 
-  /// 🚨 Rentals not paid this month
+  /// 🚨 Unpaid count
   int get unpaidRentalsThisMonth => rentalsController.rentals
-      .where((r) => r.isActive && !r.amountPaid)
+      .where((r) => r.isActive && r.amountPaid == "unpaid")
       .length;
 
   /// 📊 Collection rate
   double get collectionRate {
     if (totalMonthlyExpected == 0) return 0;
-
     return (totalCollectedThisMonth / totalMonthlyExpected) * 100;
   }
 
+  /// 🔄 Reset month
   void resetMonthlyPayments() {
-    rentalsController.rentals.value = rentalsController.rentals.map((r) {
-      return r.copyWith(amountPaid: false);
+    rentalsController.rentals.value =
+        rentalsController.rentals.map((r) {
+      return r.copyWith(amountPaid: "unpaid");
     }).toList();
   }
 }

@@ -11,22 +11,23 @@ class TenantsController extends GetxController {
     super.onInit();
     loadTenants();
 
-    // ✅ Auto-save whenever list changes
+    /// 🔄 Auto-save on changes
     ever(tenants, (_) => saveTenants());
   }
 
-  /// Load saved tenants
+  /// 📥 Load tenants
   void loadTenants() {
-    final saved = LocalStorageService.loadList('tenants');
-
     try {
+      final saved = LocalStorageService.loadList('tenants');
+
       tenants.assignAll(saved.map((e) => Tenant.fromMap(e)).toList());
     } catch (e) {
       tenants.clear();
+      AppSnackbar.error("Failed to load tenants");
     }
   }
 
-  /// Save tenants locally
+  /// 💾 Save tenants
   void saveTenants() {
     LocalStorageService.saveList(
       'tenants',
@@ -34,46 +35,54 @@ class TenantsController extends GetxController {
     );
   }
 
-  /// ✅ Add tenant with proper validation
+  /// ➕ Add tenant
   void addTenant(Tenant tenant) {
-    // Validate name
-    if (tenant.name.trim().isEmpty) {
+    final name = tenant.name.trim();
+    final phone = _normalizePhone(tenant.phone);
+
+    /// ❗ Validate name
+    if (name.isEmpty) {
       AppSnackbar.error("Tenant name is required");
       return;
     }
 
-    // Validate phone
-    if (tenant.phone.trim().isEmpty) {
-      AppSnackbar.error("Phone number is required");
+    /// ❗ Validate phone
+    if (phone.length < 9) {
+      AppSnackbar.error("Enter a valid phone number");
       return;
     }
 
-    // Prevent duplicate (by phone)
-    final exists = tenants.any((t) => t.phone.trim() == tenant.phone.trim());
+    /// 🚫 Prevent duplicates
+    final exists = tenants.any((t) => _normalizePhone(t.phone) == phone);
 
     if (exists) {
-      AppSnackbar.error("Tenant with this phone already exists");
+      AppSnackbar.error("Tenant already exists");
       return;
     }
 
-    tenants.add(tenant);
+    tenants.add(tenant.copyWith(phone: phone));
 
     AppSnackbar.success("Tenant added successfully");
   }
 
-  /// Delete tenant
+  /// 🗑 Delete tenant
   void deleteTenant(String id) {
     tenants.removeWhere((t) => t.id == id);
 
     AppSnackbar.success("Tenant deleted");
   }
 
-  /// 🔥 Helper: get tenant by ID
+  /// 🔍 Get tenant by ID
   Tenant? getById(String id) {
     try {
       return tenants.firstWhere((t) => t.id == id);
     } catch (_) {
       return null;
     }
+  }
+
+  /// 📱 Normalize phone numbers
+  String _normalizePhone(String phone) {
+    return phone.trim().replaceAll(" ", "");
   }
 }

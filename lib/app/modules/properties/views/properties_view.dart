@@ -21,7 +21,12 @@ class PropertiesView extends StatelessWidget {
 
       body: Obx(() {
         if (controller.properties.isEmpty) {
-          return const Center(child: Text("No properties added yet"));
+          return const Center(
+            child: Text(
+              "No properties added yet",
+              style: TextStyle(color: Colors.grey),
+            ),
+          );
         }
 
         return ListView.builder(
@@ -82,6 +87,7 @@ class PropertiesView extends StatelessWidget {
         );
       }),
 
+      /// ➕ Add Button
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.all(16),
         child: ElevatedButton.icon(
@@ -97,6 +103,7 @@ class PropertiesView extends StatelessWidget {
     );
   }
 
+  /// ➕ Add Property Bottom Sheet
   void _showAddPropertySheet(BuildContext context) {
     final controller = Get.find<PropertiesController>();
 
@@ -155,15 +162,7 @@ class PropertiesView extends StatelessWidget {
                     final rent =
                         double.tryParse(rentController.text.trim()) ?? 0;
 
-                    if (house.isEmpty || rent <= 0) {
-                      Get.snackbar(
-                        "Error",
-                        "Enter valid house and rent",
-                        snackPosition: SnackPosition.BOTTOM,
-                      );
-                      return;
-                    }
-
+                    /// ❗ Delegate validation to controller (best practice)
                     controller.addProperty(
                       Property(
                         id: DateTime.now().millisecondsSinceEpoch.toString(),
