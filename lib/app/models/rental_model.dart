@@ -8,8 +8,7 @@ class Rental {
 
   final bool isActive;
 
-  /// "paid", "unpaid"
-  final String amountPaid;
+  final double amountPaid;
 
   /// 📅 NEW: month tracking
   final String month;
@@ -22,7 +21,7 @@ class Rental {
     required this.startDate,
     required this.month,
     this.isActive = true,
-    this.amountPaid = "unpaid",
+    required this.amountPaid,
   });
 
   Map<String, dynamic> toMap() => {
@@ -43,11 +42,11 @@ class Rental {
     expectedAmount: (map['expectedAmount'] ?? 0).toDouble(),
     startDate: DateTime.tryParse(map['startDate'] ?? '') ?? DateTime.now(),
     isActive: map['isActive'] ?? true,
-    amountPaid: map['amountPaid'] ?? "unpaid",
+    amountPaid: map['amountPaid'] != null ? (map['amountPaid'] as num).toDouble() : 0.0,
     month: map['month'] ?? _currentMonth(),
   );
 
-  Rental copyWith({String? amountPaid, bool? isActive}) => Rental(
+  Rental copyWith({double? amountPaid, bool? isActive}) => Rental(
     id: id,
     propertyId: propertyId,
     tenantId: tenantId,

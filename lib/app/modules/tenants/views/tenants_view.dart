@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:rental_management/app/models/tenant_model.dart';
 import 'package:rental_management/app/widgets/custom_app_bar.dart';
+import 'package:rental_management/app/widgets/custom_snackbar.dart'; // ✅ FIXED IMPORT
 import '../controllers/tenants_controller.dart';
 
 class TenantsView extends StatelessWidget {
@@ -44,65 +45,39 @@ class TenantsView extends StatelessWidget {
               ),
               child: ListTile(
                 leading: const Icon(Icons.person, color: Colors.deepPurple),
+
                 title: Text(
                   tenant.name,
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
 
-                /// 📱 PHONE + COPY FEATURE
-                subtitle: Row(
-                  children: [
-                    Expanded(child: Text(tenant.phone)),
+                /// 📱 PHONE + COPY
+                subtitle: GestureDetector(
+                  onTap: () {
+                    Clipboard.setData(
+                      ClipboardData(text: tenant.phone),
+                    );
 
-                    IconButton(
-                      icon: const Icon(
+                    AppSnackbar.success("Copied ${tenant.phone}");
+                  },
+                  child: Row(
+                    children: [
+                      Expanded(child: Text(tenant.phone)),
+
+                      const Icon(
                         Icons.copy,
                         size: 18,
                         color: Colors.grey,
                       ),
-                      onPressed: () {
-                        Clipboard.setData(
-                          ClipboardData(text: tenant.phone),
-                        );
-
-                        Get.snackbar(
-                          "Copied",
-                          "Phone number copied",
-                          snackPosition: SnackPosition.BOTTOM,
-                          duration: const Duration(seconds: 2),
-                        );
-                      },
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
 
+                /// ❌ DELETE (no confirmation as requested)
                 trailing: IconButton(
                   icon: const Icon(Icons.delete, color: Colors.red),
                   onPressed: () {
-                    Get.dialog(
-                      AlertDialog(
-                        title: const Text("Delete Tenant"),
-                        content: const Text(
-                          "Are you sure you want to delete this tenant?",
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Get.back(),
-                            child: const Text("Cancel"),
-                          ),
-                          TextButton(
-                            onPressed: () {
-                              controller.deleteTenant(tenant.id);
-                              Get.back();
-                            },
-                            child: const Text(
-                              "Delete",
-                              style: TextStyle(color: Colors.red),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
+                    controller.deleteTenant(tenant.id);
                   },
                 ),
               ),
@@ -181,12 +156,11 @@ class TenantsView extends StatelessWidget {
                   ),
                   onPressed: () {
                     final name = nameController.text.trim();
-                    final phone = phoneController.text
-                        .replaceAll(" ", "")
-                        .trim();
+                    final phone =
+                        phoneController.text.replaceAll(" ", "").trim();
 
                     if (name.isEmpty || phone.isEmpty) {
-                      Get.snackbar("Error", "Fill all fields");
+                      AppSnackbar.error("Please fill all fields");
                       return;
                     }
 

@@ -1,7 +1,7 @@
 import 'package:get/get.dart';
 import 'package:rental_management/app/models/rental_model.dart';
+import 'package:rental_management/app/services/service_local_storage.dart';
 import 'package:rental_management/app/widgets/custom_snackbar.dart';
-import '../../../services/service_local_storage.dart';
 
 class RentalsController extends GetxController {
   final rentals = <Rental>[].obs;
@@ -20,6 +20,7 @@ class RentalsController extends GetxController {
     ever(rentals, (_) => saveRentals());
   }
 
+  /// 🔄 LOAD
   void loadRentals() {
     isLoading.value = true;
 
@@ -35,6 +36,7 @@ class RentalsController extends GetxController {
     }
   }
 
+  /// 💾 SAVE
   void saveRentals() {
     LocalStorageService.saveList(
       'rentals',
@@ -42,6 +44,7 @@ class RentalsController extends GetxController {
     );
   }
 
+  /// ➕ ADD RENTAL
   void addRental(Rental rental) {
     final propertyOccupied = rentals.any(
       (r) => r.propertyId == rental.propertyId && r.isActive,
@@ -65,59 +68,70 @@ class RentalsController extends GetxController {
     AppSnackbar.success("Rental assigned successfully");
   }
 
+  /// ❌ DELETE
   void deleteRental(String id) {
     rentals.removeWhere((r) => r.id == id);
     AppSnackbar.success("Rental deleted");
   }
 
-  /// 🔁 Cycle payment status
+  /// 💰 ADD PAYMENT (MAIN LOGIC)
+  void updatePayment(String id, double amount) {
+    final index = rentals.indexWhere((r) => r.id == id);
+    if (index == -1) return;
+
+    final rental = rentals[index];
+
+    final newAmount = rental.amountPaid + amount;
+
+    rentals[index] = rental.copyWith(amountPaid: newAmount);
+
+    AppSnackbar.success("Payment added");
+  }
+
+  /// 🔄 OPTIONAL QUICK TOGGLE (FULL / RESET)
   void togglePayment(String id) {
     final index = rentals.indexWhere((r) => r.id == id);
     if (index == -1) return;
 
     final rental = rentals[index];
 
-    String next;
+    double next;
 
-    switch (rental.amountPaid) {
-      case "unpaid":
-        next = "partial";
-        break;
-      case "partial":
-        next = "paid";
-        break;
-      default:
-        next = "unpaid";
+    if (rental.amountPaid == 0) {
+      next = rental.expectedAmount; // mark fully paid
+    } else {
+      next = 0; // reset
     }
 
     rentals[index] = rental.copyWith(amountPaid: next);
   }
 
+  /// 🚪 VACATE
   void vacateRental(String id) {
     final index = rentals.indexWhere((r) => r.id == id);
     if (index == -1) return;
 
     rentals[index] = rentals[index].copyWith(
       isActive: false,
-      amountPaid: "unpaid",
+      amountPaid: 0, // reset correctly as double
     );
 
     AppSnackbar.success("Property vacated");
   }
 
-  /// 📊 MONTH FILTERED HELPERS
-  List<Rental> get activeRentals =>
-      rentals.where((r) => r.isActive && r.month == currentMonth).toList();
-
+  /// 📊 MONTH FILTER
   List<Rental> get monthlyRentals =>
       rentals.where((r) => r.month == currentMonth).toList();
 
-  int get totalPaid =>
-      monthlyRentals.where((r) => r.amountPaid == "paid").length;
+  List<Rental> get activeRentals =>
+      rentals.where((r) => r.isActive && r.month == currentMonth).toList();
 
-  int get totalPartial =>
-      monthlyRentals.where((r) => r.amountPaid == "partial").length;
+  /// 📊 FINANCIAL HELPERS (NEW)
+  double get totalExpected =>
+      monthlyRentals.fold(0, (sum, r) => sum + r.expectedAmount);
 
-  int get totalUnpaid =>
-      monthlyRentals.where((r) => r.amountPaid == "unpaid").length;
+  double get totalCollected =>
+      monthlyRentals.fold(0, (sum, r) => sum + r.amountPaid);
+
+  double get totalBalance => totalExpected - totalCollected;
 }

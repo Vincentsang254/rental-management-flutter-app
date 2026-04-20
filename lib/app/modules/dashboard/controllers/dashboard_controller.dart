@@ -7,46 +7,52 @@ class DashboardController extends GetxController {
   final PropertiesController propertiesController =
       Get.find<PropertiesController>();
 
-  final TenantsController tenantsController = Get.find<TenantsController>();
+  final TenantsController tenantsController =
+      Get.find<TenantsController>();
 
-  final RentalsController rentalsController = Get.find<RentalsController>();
+  final RentalsController rentalsController =
+      Get.find<RentalsController>();
 
-  /// 📊 Counts
+  /// 📊 COUNTS
   int get totalProperties => propertiesController.properties.length;
 
   int get totalTenants => tenantsController.tenants.length;
 
   int get activeRentals =>
-      rentalsController.rentals.where((r) => r.isActive).length;
+      rentalsController.activeRentals.length;
 
-  /// 💰 Expected monthly rent
-  double get totalMonthlyExpected => rentalsController.rentals
-      .where((r) => r.isActive)
+  /// 📅 CURRENT MONTH RENTALS
+  List get monthlyRentals => rentalsController.monthlyRentals;
+
+  /// 💰 EXPECTED RENT
+  double get totalMonthlyExpected => monthlyRentals
       .fold(0.0, (sum, r) => sum + r.expectedAmount);
 
-  /// 💰 Collected (fully paid)
-  double get totalCollectedThisMonth => rentalsController.rentals
-      .where((r) => r.isActive && r.amountPaid == "paid")
-      .fold(0.0, (sum, r) => sum + r.expectedAmount);
+  /// 💰 TOTAL COLLECTED
+  double get totalCollectedThisMonth => monthlyRentals
+      .fold(0.0, (sum, r) => sum + r.amountPaid);
 
-  /// ⚠️ Partial payments
-  double get totalPartialThisMonth => rentalsController.rentals
-      .where((r) => r.isActive && r.amountPaid == "partial")
-      .fold(0.0, (sum, r) => sum + r.expectedAmount);
+  /// ⚠️ PARTIAL PAYMENTS
+  double get totalPartialThisMonth => monthlyRentals
+      .where((r) => r.amountPaid > 0 && r.amountPaid < r.expectedAmount)
+      .fold(0.0, (sum, r) => sum + r.amountPaid);
 
-  /// ❗ Pending payments
-  double get totalPendingThisMonth => rentalsController.rentals
-      .where((r) => r.isActive && r.amountPaid == "unpaid")
-      .fold(0.0, (sum, r) => sum + r.expectedAmount);
+  /// ❗ PENDING (UNPAID BALANCE)
+  double get totalPendingThisMonth => monthlyRentals
+      .fold(
+        0.0,
+        (sum, r) => sum + (r.expectedAmount - r.amountPaid),
+      );
 
-  /// 🚨 Unpaid count
-  int get unpaidRentalsThisMonth => rentalsController.rentals
-      .where((r) => r.isActive && r.amountPaid == "unpaid")
+  /// 🚨 UNPAID RENTALS COUNT
+  int get unpaidRentalsThisMonth => monthlyRentals
+      .where((r) => r.amountPaid == 0)
       .length;
 
-  /// 📊 Collection rate
+  /// 📊 COLLECTION RATE
   double get collectionRate {
     if (totalMonthlyExpected == 0) return 0;
+
     return (totalCollectedThisMonth / totalMonthlyExpected) * 100;
   }
 }
