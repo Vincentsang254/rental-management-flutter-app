@@ -13,11 +13,7 @@ class Tenant {
     phone: map['phone']?.toString() ?? '',
   );
 
-  Tenant copyWith({String? id, String? name, String? phone}) {
-    return Tenant(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      phone: phone ?? this.phone,
-    );
-  } 
+  Tenant copyWith({required String phone}) {
+    return Tenant(id: id, name: name, phone: phone);
+  }
 }

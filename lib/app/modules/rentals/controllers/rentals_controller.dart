@@ -7,6 +7,7 @@ class RentalsController extends GetxController {
   final rentals = <Rental>[].obs;
   final isLoading = false.obs;
 
+  /// 📅 Current Month Key (YYYY-MM)
   String get currentMonth {
     final now = DateTime.now();
     return "${now.year}-${now.month.toString().padLeft(2, '0')}";
@@ -17,10 +18,13 @@ class RentalsController extends GetxController {
     super.onInit();
     loadRentals();
 
+    /// Auto-save whenever rentals change
     ever(rentals, (_) => saveRentals());
   }
 
-  /// 🔄 LOAD
+  // =========================
+  // 🔄 LOAD RENTALS
+  // =========================
   void loadRentals() {
     isLoading.value = true;
 
@@ -36,7 +40,9 @@ class RentalsController extends GetxController {
     }
   }
 
-  /// 💾 SAVE
+  // =========================
+  // 💾 SAVE RENTALS
+  // =========================
   void saveRentals() {
     LocalStorageService.saveList(
       'rentals',
@@ -44,7 +50,9 @@ class RentalsController extends GetxController {
     );
   }
 
-  /// ➕ ADD RENTAL
+  // =========================
+  // ➕ ADD RENTAL
+  // =========================
   void addRental(Rental rental) {
     final propertyOccupied = rentals.any(
       (r) => r.propertyId == rental.propertyId && r.isActive,
@@ -68,70 +76,86 @@ class RentalsController extends GetxController {
     AppSnackbar.success("Rental assigned successfully");
   }
 
-  /// ❌ DELETE
+  // =========================
+  // ❌ DELETE RENTAL
+  // =========================
   void deleteRental(String id) {
     rentals.removeWhere((r) => r.id == id);
     AppSnackbar.success("Rental deleted");
   }
 
-  /// 💰 ADD PAYMENT (MAIN LOGIC)
+  // =========================
+  // 💰 PAYMENT LOGIC
+  // =========================
   void updatePayment(String id, double amount) {
     final index = rentals.indexWhere((r) => r.id == id);
     if (index == -1) return;
 
     final rental = rentals[index];
 
-    final newAmount = rental.amountPaid + amount;
+    if (amount <= 0) return;
+
+    final newAmount = (rental.amountPaid + amount)
+        .clamp(0, rental.expectedAmount * 2)
+        .toDouble();
 
     rentals[index] = rental.copyWith(amountPaid: newAmount);
 
     AppSnackbar.success("Payment added");
   }
 
-  /// 🔄 OPTIONAL QUICK TOGGLE (FULL / RESET)
+  // =========================
+  // 🔄 TOGGLE PAYMENT (QUICK ACTION)
+  // =========================
   void togglePayment(String id) {
     final index = rentals.indexWhere((r) => r.id == id);
     if (index == -1) return;
 
     final rental = rentals[index];
 
-    double next;
+    final nextAmount = rental.amountPaid <= 0 ? rental.expectedAmount : 0.0;
 
-    if (rental.amountPaid == 0) {
-      next = rental.expectedAmount; // mark fully paid
-    } else {
-      next = 0; // reset
-    }
-
-    rentals[index] = rental.copyWith(amountPaid: next);
+    rentals[index] = rental.copyWith(amountPaid: nextAmount);
   }
 
-  /// 🚪 VACATE
+  // =========================
+  // 🚪 VACATE PROPERTY
+  // =========================
   void vacateRental(String id) {
     final index = rentals.indexWhere((r) => r.id == id);
     if (index == -1) return;
 
-    rentals[index] = rentals[index].copyWith(
-      isActive: false,
-      amountPaid: 0, // reset correctly as double
-    );
+    rentals[index] = rentals[index].copyWith(isActive: false);
 
     AppSnackbar.success("Property vacated");
   }
 
-  /// 📊 MONTH FILTER
-  List<Rental> get monthlyRentals =>
-      rentals.where((r) => r.month == currentMonth).toList();
+  // =========================
+  // 📅 MONTH FILTERING
+  // =========================
+  List<Rental> get monthlyRentals => rentals.where((r) {
+    final monthKey =
+        "${r.billingMonth.year}-${r.billingMonth.month.toString().padLeft(2, '0')}";
+    return monthKey == currentMonth;
+  }).toList();
 
-  List<Rental> get activeRentals =>
-      rentals.where((r) => r.isActive && r.month == currentMonth).toList();
+  List<Rental> get activeRentals => rentals.where((r) {
+    final monthKey =
+        "${r.billingMonth.year}-${r.billingMonth.month.toString().padLeft(2, '0')}";
+    return r.isActive && monthKey == currentMonth;
+  }).toList();
 
-  /// 📊 FINANCIAL HELPERS (NEW)
+  // =========================
+  // 📊 FINANCIAL HELPERS
+  // =========================
   double get totalExpected =>
-      monthlyRentals.fold(0, (sum, r) => sum + r.expectedAmount);
+      monthlyRentals.fold(0.0, (sum, r) => sum + r.expectedAmount);
 
   double get totalCollected =>
-      monthlyRentals.fold(0, (sum, r) => sum + r.amountPaid);
+      monthlyRentals.fold(0.0, (sum, r) => sum + r.amountPaid);
 
-  double get totalBalance => totalExpected - totalCollected;
+  double get totalBalance =>
+      monthlyRentals.fold(0.0, (sum, r) => sum + r.remaining);
+
+  int get unpaidCount => monthlyRentals.where((r) => !r.isPaid).length;
 }

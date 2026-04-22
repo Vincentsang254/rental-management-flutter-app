@@ -40,20 +40,26 @@ class TenantsController extends GetxController {
     final name = tenant.name.trim();
     final phone = _normalizePhone(tenant.phone);
 
-    /// ❗ Validate name
+    if (tenant.id.trim().isEmpty) {
+      AppSnackbar.error("Invalid tenant ID");
+      return;
+    }
+
     if (name.isEmpty) {
       AppSnackbar.error("Tenant name is required");
       return;
     }
 
-    /// ❗ Validate phone
     if (phone.length < 9) {
       AppSnackbar.error("Enter a valid phone number");
       return;
     }
 
-    /// 🚫 Prevent duplicates
-    final exists = tenants.any((t) => _normalizePhone(t.phone) == phone);
+    final exists = tenants.any(
+      (t) =>
+          _normalizePhone(t.phone) == phone ||
+          t.name.trim().toLowerCase() == name.toLowerCase(),
+    );
 
     if (exists) {
       AppSnackbar.error("Tenant already exists");
@@ -68,7 +74,6 @@ class TenantsController extends GetxController {
   /// 🗑 Delete tenant
   void deleteTenant(String id) {
     tenants.removeWhere((t) => t.id == id);
-
     AppSnackbar.success("Tenant deleted");
   }
 
@@ -83,6 +88,6 @@ class TenantsController extends GetxController {
 
   /// 📱 Normalize phone numbers
   String _normalizePhone(String phone) {
-    return phone.trim().replaceAll(" ", "");
+    return phone.trim().replaceAll(" ", "").replaceAll("-", "");
   }
 }

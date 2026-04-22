@@ -18,6 +18,12 @@ class Property {
   factory Property.fromMap(Map<String, dynamic> map) => Property(
     id: map['id']?.toString() ?? '',
     houseNumber: map['houseNumber']?.toString() ?? '',
-    rentAmount: (map['rentAmount'] ?? 0).toDouble(),
+    rentAmount: _toDouble(map['rentAmount']),
   );
+}
+
+double _toDouble(dynamic value) {
+  if (value is num) return value.toDouble();
+  if (value is String) return double.tryParse(value) ?? 0;
+  return 0;
 }

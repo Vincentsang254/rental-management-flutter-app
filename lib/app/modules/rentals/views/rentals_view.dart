@@ -16,7 +16,6 @@ class RentalsView extends StatelessWidget {
     return "KES ${value.toStringAsFixed(0)}";
   }
 
-  /// 🔥 Smart payment status (AUTO)
   Map<String, dynamic> getPaymentUI(Rental rental) {
     if (rental.amountPaid <= 0) {
       return {"text": "UNPAID", "color": Colors.red};
@@ -73,6 +72,8 @@ class RentalsView extends StatelessWidget {
             final status = getPaymentUI(rental);
             final balance = getBalance(rental);
 
+            final Color statusColor = status["color"];
+
             return Container(
               margin: const EdgeInsets.only(bottom: 14),
               padding: const EdgeInsets.all(16),
@@ -82,7 +83,6 @@ class RentalsView extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  /// TOP ROW
                   Row(
                     children: [
                       const Icon(Icons.person, color: Colors.deepPurple),
@@ -104,20 +104,19 @@ class RentalsView extends StatelessWidget {
                         ),
                       ),
 
-                      /// STATUS CHIP
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 10,
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: status["color"].withOpacity(0.1),
+                          color: statusColor.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
                           status["text"],
                           style: TextStyle(
-                            color: status["color"],
+                            color: statusColor,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -127,7 +126,6 @@ class RentalsView extends StatelessWidget {
 
                   const SizedBox(height: 12),
 
-                  /// MONEY INFO
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -138,7 +136,6 @@ class RentalsView extends StatelessWidget {
 
                   const SizedBox(height: 6),
 
-                  /// BALANCE
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -149,8 +146,9 @@ class RentalsView extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
+
                       Text(
-                        rental.month,
+                        "${rental.billingMonth.year}-${rental.billingMonth.month.toString().padLeft(2, '0')}",
                         style: const TextStyle(color: Colors.grey),
                       ),
                     ],
@@ -158,10 +156,8 @@ class RentalsView extends StatelessWidget {
 
                   const SizedBox(height: 10),
 
-                  /// ACTIONS
                   Row(
                     children: [
-                      /// ➕ Add Payment
                       Expanded(
                         child: TextButton(
                           onPressed: () {
@@ -194,7 +190,6 @@ class RentalsView extends StatelessWidget {
         );
       }),
 
-      /// ➕ ADD RENTAL BUTTON
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.all(16),
         child: ElevatedButton(
@@ -209,7 +204,6 @@ class RentalsView extends StatelessWidget {
     );
   }
 
-  /// 🔥 ADD PAYMENT DIALOG
   void _showAddPaymentDialog(BuildContext context, Rental rental) {
     final controller = Get.find<RentalsController>();
     final paymentController = TextEditingController();
@@ -243,7 +237,6 @@ class RentalsView extends StatelessWidget {
     );
   }
 
-  /// ➕ ADD RENTAL SHEET
   void _showAddRentalSheet(BuildContext context) {
     final rentalsController = Get.find<RentalsController>();
     final propertiesController = Get.find<PropertiesController>();
@@ -346,9 +339,9 @@ class RentalsView extends StatelessWidget {
                             propertyId: selectedProperty!.id,
                             tenantId: selectedTenant!.id,
                             expectedAmount: rent,
+                            amountPaid: 0,
                             startDate: DateTime.now(),
-                            month: rentalsController.currentMonth,
-                            amountPaid: 0, // 🔥 start unpaid
+                            billingMonth: DateTime.now(),
                           ),
                         );
 
