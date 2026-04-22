@@ -12,38 +12,62 @@ class DashboardController extends GetxController {
 
   final RentalsController rentalsController = Get.find<RentalsController>();
 
+  /// =========================
   /// 📊 COUNTS
+  /// =========================
   int get totalProperties => propertiesController.properties.length;
 
   int get totalTenants => tenantsController.tenants.length;
 
   int get activeRentals => rentalsController.activeRentals.length;
 
-  /// 📅 MONTHLY RENTALS
-  List<Rental> get monthlyRentals => rentalsController.monthlyRentals;
+  /// =========================
+  /// 📅 MONTHLY DATA (CACHED)
+  /// =========================
+  List<Rental> get _monthly => rentalsController.monthlyRentals;
 
-  /// 💰 EXPECTED
+  /// Public access (if needed)
+  List<Rental> get monthlyRentals => _monthly;
+
+  /// =========================
+  /// 💰 FINANCIALS
+  /// =========================
   double get totalMonthlyExpected =>
-      monthlyRentals.fold(0.0, (sum, r) => sum + r.expectedAmount);
+      _monthly.fold(0.0, (sum, r) => sum + r.expectedAmount);
 
-  /// 💰 COLLECTED
   double get totalCollectedThisMonth =>
-      monthlyRentals.fold(0.0, (sum, r) => sum + r.amountPaid);
+      _monthly.fold(0.0, (sum, r) => sum + r.amountPaid);
 
-  /// ⚠️ PARTIAL
-  double get totalPartialThisMonth => monthlyRentals
+  double get totalPartialThisMonth => _monthly
       .where((r) => r.amountPaid > 0 && !r.isPaid)
       .fold(0.0, (sum, r) => sum + r.amountPaid);
 
-  /// ❗ PENDING
   double get totalPendingThisMonth =>
-      monthlyRentals.fold(0.0, (sum, r) => sum + r.remaining);
+      _monthly.fold(0.0, (sum, r) => sum + r.remaining);
 
-  /// 🚨 UNPAID COUNT
-  int get unpaidRentalsThisMonth =>
-      monthlyRentals.where((r) => !r.isPaid).length;
+  double get totalOverpaidThisMonth =>
+      _monthly.fold(0.0, (sum, r) => sum + r.overpaid);
 
+  /// =========================
+  /// 🚨 ALERTS / LISTS
+  /// =========================
+
+  /// ❗ All unpaid (including partial)
+  List<Rental> get unpaidRentals => _monthly.where((r) => !r.isPaid).toList();
+
+  /// ❗ Fully unpaid only
+  List<Rental> get fullyUnpaidRentals =>
+      _monthly.where((r) => r.amountPaid == 0).toList();
+
+  /// ⚠️ Partial payments only
+  List<Rental> get partialRentals =>
+      _monthly.where((r) => r.amountPaid > 0 && !r.isPaid).toList();
+
+  int get unpaidRentalsThisMonth => unpaidRentals.length;
+
+  /// =========================
   /// 📊 COLLECTION RATE
+  /// =========================
   double get collectionRate {
     if (totalMonthlyExpected == 0) return 0;
 

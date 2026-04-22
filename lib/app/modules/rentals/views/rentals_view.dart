@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
+
 import 'package:rental_management/app/models/property_model.dart';
 import 'package:rental_management/app/models/rental_model.dart';
 import 'package:rental_management/app/models/tenant_model.dart';
 import 'package:rental_management/app/widgets/custom_app_bar.dart';
 import 'package:rental_management/app/widgets/custom_snackbar.dart';
+
 import '../controllers/rentals_controller.dart';
 import '../../properties/controllers/properties_controller.dart';
 import '../../tenants/controllers/tenants_controller.dart';
@@ -16,8 +19,15 @@ class RentalsView extends StatelessWidget {
     return "KES ${value.toStringAsFixed(0)}";
   }
 
+  String formatDate(DateTime date) {
+    return DateFormat("dd MMM yyyy").format(date);
+  }
+
+  /// 🔥 STATUS
   Map<String, dynamic> getPaymentUI(Rental rental) {
-    if (rental.amountPaid <= 0) {
+    if (rental.overpaid > 0) {
+      return {"text": "OVERPAID", "color": Colors.blue};
+    } else if (rental.amountPaid <= 0) {
       return {"text": "UNPAID", "color": Colors.red};
     } else if (rental.amountPaid < rental.expectedAmount) {
       return {"text": "PARTIAL", "color": Colors.orange};
@@ -26,8 +36,21 @@ class RentalsView extends StatelessWidget {
     }
   }
 
-  double getBalance(Rental rental) {
-    return rental.expectedAmount - rental.amountPaid;
+  /// 🔥 BALANCE UI
+  Map<String, dynamic> getBalanceUI(Rental rental) {
+    if (rental.overpaid > 0) {
+      return {
+        "text": "CREDIT: ${formatMoney(rental.overpaid)}",
+        "color": Colors.blue,
+      };
+    } else if (rental.remaining > 0) {
+      return {
+        "text": "BALANCE: ${formatMoney(rental.remaining)}",
+        "color": Colors.red,
+      };
+    } else {
+      return {"text": "NO BALANCE", "color": Colors.green};
+    }
   }
 
   @override
@@ -57,53 +80,68 @@ class RentalsView extends StatelessWidget {
 
             final property = propertiesController.properties.firstWhere(
               (p) => p.id == rental.propertyId,
-              orElse: () => Property(
-                id: '',
-                houseNumber: 'Unknown Property',
-                rentAmount: 0.0,
-              ),
+              orElse: () =>
+                  Property(id: '', houseNumber: 'UNKNOWN', rentAmount: 0.0),
             );
 
             final tenant = tenantsController.tenants.firstWhere(
               (t) => t.id == rental.tenantId,
-              orElse: () => Tenant(id: '', name: 'Unknown Tenant', phone: ''),
+              orElse: () => Tenant(id: '', name: 'UNKNOWN TENANT', phone: ''),
             );
 
             final status = getPaymentUI(rental);
-            final balance = getBalance(rental);
+            final balanceUI = getBalanceUI(rental);
 
             final Color statusColor = status["color"];
 
             return Container(
-              margin: const EdgeInsets.only(bottom: 14),
+              margin: const EdgeInsets.only(bottom: 16),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: rental.isActive ? Colors.white : Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 8,
+                    spreadRadius: 2,
+                  ),
+                ],
               ),
               child: Column(
                 children: [
+                  /// 🔹 HEADER
                   Row(
                     children: [
-                      const Icon(Icons.person, color: Colors.deepPurple),
-                      const SizedBox(width: 10),
+                      CircleAvatar(
+                        backgroundColor: Colors.deepPurple.withOpacity(0.1),
+                        child: const Icon(
+                          Icons.person,
+                          color: Colors.deepPurple,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
 
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              tenant.name,
+                              tenant.name.toUpperCase(),
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 15,
                               ),
                             ),
-                            Text(property.houseNumber),
+                            Text(
+                              property.houseNumber.toUpperCase(),
+                              style: const TextStyle(color: Colors.grey),
+                            ),
                           ],
                         ),
                       ),
 
+                      /// STATUS
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 10,
@@ -124,8 +162,9 @@ class RentalsView extends StatelessWidget {
                     ],
                   ),
 
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 14),
 
+                  /// 💰 MONEY
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -136,39 +175,45 @@ class RentalsView extends StatelessWidget {
 
                   const SizedBox(height: 6),
 
+                  /// 🔥 BALANCE
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        "Balance: ${formatMoney(balance)}",
+                        balanceUI["text"],
                         style: TextStyle(
-                          color: balance > 0 ? Colors.red : Colors.green,
+                          color: balanceUI["color"],
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-
                       Text(
-                        "${rental.billingMonth.year}-${rental.billingMonth.month.toString().padLeft(2, '0')}",
+                        formatDate(rental.billingMonth),
                         style: const TextStyle(color: Colors.grey),
                       ),
                     ],
                   ),
 
-                  const SizedBox(height: 10),
+                  const Divider(height: 20),
 
+                  /// ⚙️ ACTIONS
                   Row(
                     children: [
                       Expanded(
-                        child: TextButton(
-                          onPressed: () {
-                            _showAddPaymentDialog(context, rental);
-                          },
+                        child: ElevatedButton(
+                          onPressed: rental.isActive
+                              ? () => _showAddPaymentDialog(context, rental)
+                              : null,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.deepPurple,
+                          ),
                           child: const Text("Add Payment"),
                         ),
                       ),
 
+                      const SizedBox(width: 10),
+
                       if (rental.isActive)
-                        TextButton(
+                        OutlinedButton(
                           onPressed: () {
                             rentalsController.vacateRental(rental.id);
                           },
@@ -190,20 +235,20 @@ class RentalsView extends StatelessWidget {
         );
       }),
 
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(16),
-        child: ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.deepPurple,
-            padding: const EdgeInsets.symmetric(vertical: 14),
-          ),
-          onPressed: () => _showAddRentalSheet(context),
-          child: const Text("Add Rental"),
+      /// ➕ ADD RENTAL
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: Colors.deepPurple,
+        onPressed: () => _showAddRentalSheet(context),
+        icon: const Icon(Icons.add),
+        label: const Text(
+          "ADD RENTAL",
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
     );
   }
 
+  /// 💰 ADD PAYMENT
   void _showAddPaymentDialog(BuildContext context, Rental rental) {
     final controller = Get.find<RentalsController>();
     final paymentController = TextEditingController();
@@ -237,6 +282,7 @@ class RentalsView extends StatelessWidget {
     );
   }
 
+  /// ➕ ADD RENTAL
   void _showAddRentalSheet(BuildContext context) {
     final rentalsController = Get.find<RentalsController>();
     final propertiesController = Get.find<PropertiesController>();
@@ -315,10 +361,6 @@ class RentalsView extends StatelessWidget {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.deepPurple,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                      ),
                       onPressed: () {
                         final rent = double.tryParse(
                           rentController.text.trim(),

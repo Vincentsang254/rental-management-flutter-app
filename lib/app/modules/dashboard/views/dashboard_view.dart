@@ -16,104 +16,158 @@ class DashboardView extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
-      appBar: const CustomAppBar(title: "Dashboard"),
+      appBar: const CustomAppBar(title: "DASHBOARD"),
 
       body: Obx(() {
         return SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(16),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              /// 📊 Overview
-              _buildStatCard(
-                title: "Total Properties",
-                value: controller.totalProperties.toString(),
-                icon: Icons.home_work,
-                color: Colors.blue,
+              /// =========================
+              /// 📊 OVERVIEW
+              /// =========================
+              _sectionTitle("OVERVIEW"),
+              const SizedBox(height: 12),
+
+              _miniCard(
+                "PROPERTIES",
+                controller.totalProperties.toString(),
+                Icons.home_work,
+                Colors.blue,
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
-              _buildStatCard(
-                title: "Total Tenants",
-                value: controller.totalTenants.toString(),
-                icon: Icons.people,
-                color: Colors.green,
+              _miniCard(
+                "TENANTS",
+                controller.totalTenants.toString(),
+                Icons.people,
+                Colors.green,
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
-              _buildStatCard(
-                title: "Active Rentals",
-                value: controller.activeRentals.toString(),
-                icon: Icons.assignment,
-                color: Colors.orange,
+              _miniCard(
+                "ACTIVE RENTALS",
+                controller.activeRentals.toString(),
+                Icons.assignment,
+                Colors.orange,
               ),
 
               const SizedBox(height: 20),
 
-              /// 💰 Financial
-              _buildStatCard(
-                title: "Monthly Expected Rent",
-                value: formatMoney(controller.totalMonthlyExpected),
-                icon: Icons.request_quote,
-                color: Colors.purple,
+              /// =========================
+              /// 💰 FINANCIAL
+              /// =========================
+              _sectionTitle("FINANCIAL SUMMARY"),
+              const SizedBox(height: 12),
+
+              _bigCard(
+                "MONTHLY EXPECTED",
+                formatMoney(controller.totalMonthlyExpected),
+                Icons.request_quote,
+                Colors.purple,
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
-              _buildStatCard(
-                title: "Collected This Month",
-                value: formatMoney(controller.totalCollectedThisMonth),
-                icon: Icons.payments,
-                color: Colors.teal,
+              _bigCard(
+                "COLLECTED",
+                formatMoney(controller.totalCollectedThisMonth),
+                Icons.payments,
+                Colors.teal,
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
-              _buildStatCard(
-                title: "Partial Payments",
-                value: formatMoney(controller.totalPartialThisMonth),
-                icon: Icons.timelapse,
-                color: Colors.orange,
+              _bigCard(
+                "PENDING",
+                formatMoney(controller.totalPendingThisMonth),
+                Icons.warning_amber,
+                Colors.red,
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
-              _buildStatCard(
-                title: "Pending This Month",
-                value: formatMoney(controller.totalPendingThisMonth),
-                icon: Icons.warning,
-                color: Colors.red,
+              _bigCard(
+                "PARTIAL PAYMENTS",
+                formatMoney(controller.totalPartialThisMonth),
+                Icons.timelapse,
+                Colors.orange,
               ),
 
-              const SizedBox(height: 16),
+              if (controller.totalOverpaidThisMonth > 0) ...[
+                const SizedBox(height: 12),
 
-              /// ⚠️ Alerts
-              _buildStatCard(
-                title: "Unpaid Rentals",
-                value: controller.unpaidRentalsThisMonth.toString(),
-                icon: Icons.error_outline,
-                color: Colors.deepOrange,
+                _bigCard(
+                  "OVERPAID (CREDIT)",
+                  formatMoney(controller.totalOverpaidThisMonth),
+                  Icons.trending_up,
+                  Colors.blue,
+                ),
+              ],
+
+              const SizedBox(height: 20),
+
+              /// =========================
+              /// ⚠️ ALERTS
+              /// =========================
+              _sectionTitle("ALERTS"),
+              const SizedBox(height: 12),
+
+              _miniCard(
+                "UNPAID RENTALS",
+                controller.unpaidRentalsThisMonth.toString(),
+                Icons.error_outline,
+                Colors.deepOrange,
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
-              _buildStatCard(
-                title: "Collection Rate",
-                value: "${controller.collectionRate.toStringAsFixed(1)}%",
-                icon: Icons.pie_chart,
-                color: Colors.indigo,
+              /// =========================
+              /// 📊 COLLECTION RATE
+              /// =========================
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "COLLECTION RATE",
+                      style: TextStyle(color: Colors.grey.shade600),
+                    ),
+                    const SizedBox(height: 6),
+
+                    Text(
+                      "${controller.collectionRate.toStringAsFixed(1)}%",
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    LinearProgressIndicator(
+                      value: controller.collectionRate / 100,
+                      minHeight: 10,
+                      backgroundColor: Colors.grey.shade300,
+                      color: controller.collectionRate >= 80
+                          ? Colors.green
+                          : controller.collectionRate >= 50
+                          ? Colors.orange
+                          : Colors.red,
+                    ),
+                  ],
+                ),
               ),
 
-              const SizedBox(height: 10),
-
-              /// 📊 Progress Bar
-              LinearProgressIndicator(
-                value: controller.collectionRate / 100,
-                minHeight: 8,
-                backgroundColor: Colors.grey.shade300,
-                color: Colors.indigo,
-              ),
+              const SizedBox(height: 20),
             ],
           ),
         );
@@ -121,42 +175,94 @@ class DashboardView extends StatelessWidget {
     );
   }
 
-  /// 📦 Stat Card
-  Widget _buildStatCard({
-    required String title,
-    required String value,
-    required IconData icon,
-    required Color color,
-  }) {
+  /// =========================
+  /// SECTION TITLE
+  /// =========================
+  Widget _sectionTitle(String title) {
+    return Text(
+      title,
+      style: const TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.bold,
+        letterSpacing: 1.2,
+        color: Colors.black87,
+      ),
+    );
+  }
+
+  /// =========================
+  /// MINI CARD
+  /// =========================
+  Widget _miniCard(String title, String value, IconData icon, Color color) {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            spreadRadius: 2,
-          ),
-        ],
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         children: [
           CircleAvatar(
-            radius: 28,
-            backgroundColor: color.withOpacity(0.1),
-            child: Icon(icon, color: color, size: 28),
+            backgroundColor: color.withOpacity(0.12),
+            child: Icon(icon, color: color),
           ),
-          const SizedBox(width: 20),
+          const SizedBox(width: 12),
+
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
-                  style: const TextStyle(fontSize: 14, color: Colors.grey),
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// =========================
+  /// BIG CARD
+  /// =========================
+  Widget _bigCard(String title, String value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: color.withOpacity(0.2)),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 26,
+            backgroundColor: color.withOpacity(0.12),
+            child: Icon(icon, color: color),
+          ),
+          const SizedBox(width: 14),
+
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontSize: 12,
+                    letterSpacing: 1,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 Text(

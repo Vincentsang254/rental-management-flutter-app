@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:rental_management/app/models/property_model.dart';
 import 'package:rental_management/app/widgets/custom_app_bar.dart';
+import 'package:rental_management/app/widgets/custom_snackbar.dart';
 import '../controllers/properties_controller.dart';
 
 class PropertiesView extends StatelessWidget {
@@ -17,14 +18,24 @@ class PropertiesView extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
-      appBar: const CustomAppBar(title: "Properties"),
+      appBar: const CustomAppBar(title: "PROPERTIES"),
 
       body: Obx(() {
         if (controller.properties.isEmpty) {
           return const Center(
-            child: Text(
-              "No properties added yet",
-              style: TextStyle(color: Colors.grey),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.home_work_outlined, size: 60, color: Colors.grey),
+                SizedBox(height: 10),
+                Text(
+                  "NO PROPERTIES ADDED",
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
             ),
           );
         }
@@ -36,22 +47,29 @@ class PropertiesView extends StatelessWidget {
             final property = controller.properties[index];
 
             return Container(
-              margin: const EdgeInsets.only(bottom: 12),
+              margin: const EdgeInsets.only(bottom: 14),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: const [
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
                   BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 4,
-                    offset: Offset(0, 2),
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.home, color: Colors.deepPurple),
+                  CircleAvatar(
+                    backgroundColor: Colors.deepPurple.withOpacity(0.1),
+                    child: const Icon(
+                      Icons.home,
+                      color: Colors.deepPurple,
+                    ),
+                  ),
+
                   const SizedBox(width: 12),
 
                   Expanded(
@@ -59,25 +77,42 @@ class PropertiesView extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          property.houseNumber,
+                          property.houseNumber.toUpperCase(),
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
-                            fontSize: 16,
+                            fontSize: 15,
+                            letterSpacing: 0.5,
                           ),
                         ),
-                        const SizedBox(height: 4),
+
+                        const SizedBox(height: 6),
+
                         Text(
-                          formatMoney(property.rentAmount),
-                          style: TextStyle(color: Colors.grey.shade600),
+                          "RENT: ${formatMoney(property.rentAmount)}",
+                          style: TextStyle(
+                            color: Colors.grey.shade700,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ],
                     ),
                   ),
 
                   IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.redAccent),
+                    icon: const Icon(Icons.delete, color: Colors.red),
                     onPressed: () {
-                      controller.deleteProperty(property.id);
+                      Get.defaultDialog(
+                        title: "Delete Property",
+                        middleText: "Are you sure you want to delete this property?",
+                        textConfirm: "Delete",
+                        textCancel: "Cancel",
+                        confirmTextColor: Colors.white,
+                        onConfirm: () {
+                          controller.deleteProperty(property.id);
+                          Get.back();
+                          AppSnackbar.success("Property deleted");
+                        },
+                      );
                     },
                   ),
                 ],
@@ -87,23 +122,16 @@ class PropertiesView extends StatelessWidget {
         );
       }),
 
-      /// ➕ Add Button
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(16),
-        child: ElevatedButton.icon(
-          icon: const Icon(Icons.add),
-          label: const Text("Add Property"),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.deepPurple,
-            padding: const EdgeInsets.symmetric(vertical: 14),
-          ),
-          onPressed: () => _showAddPropertySheet(context),
-        ),
+      /// ➕ Floating Button (clean modern style)
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: Colors.deepPurple,
+        icon: const Icon(Icons.add),
+        label: const Text("ADD PROPERTY"),
+        onPressed: () => _showAddPropertySheet(context),
       ),
     );
   }
 
-  /// ➕ Add Property Bottom Sheet
   void _showAddPropertySheet(BuildContext context) {
     final controller = Get.find<PropertiesController>();
 
@@ -117,22 +145,23 @@ class PropertiesView extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           decoration: const BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               const Text(
-                "Add Property",
+                "ADD PROPERTY",
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
 
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
 
               TextField(
                 controller: houseController,
+                textCapitalization: TextCapitalization.characters,
                 decoration: const InputDecoration(
-                  labelText: "House Number",
+                  labelText: "HOUSE NUMBER",
                   border: OutlineInputBorder(),
                 ),
               ),
@@ -143,7 +172,7 @@ class PropertiesView extends StatelessWidget {
                 controller: rentController,
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(
-                  labelText: "Rent Amount",
+                  labelText: "RENT AMOUNT (KES)",
                   border: OutlineInputBorder(),
                 ),
               ),
@@ -159,10 +188,13 @@ class PropertiesView extends StatelessWidget {
                   ),
                   onPressed: () {
                     final house = houseController.text.trim();
-                    final rent =
-                        double.tryParse(rentController.text.trim()) ?? 0;
+                    final rent = double.tryParse(rentController.text.trim());
 
-                    /// ❗ Delegate validation to controller (best practice)
+                    if (house.isEmpty || rent == null || rent <= 0) {
+                      AppSnackbar.error("Fill all fields correctly");
+                      return;
+                    }
+
                     controller.addProperty(
                       Property(
                         id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -172,8 +204,9 @@ class PropertiesView extends StatelessWidget {
                     );
 
                     Get.back();
+                    AppSnackbar.success("Property added");
                   },
-                  child: const Text("Save Property"),
+                  child: const Text("SAVE PROPERTY"),
                 ),
               ),
             ],
