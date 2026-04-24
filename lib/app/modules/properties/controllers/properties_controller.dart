@@ -3,19 +3,23 @@ import 'package:rental_management/app/models/property_model.dart';
 import 'package:rental_management/app/services/service_local_storage.dart';
 import 'package:rental_management/app/widgets/custom_snackbar.dart';
 
+import '../../rentals/controllers/rentals_controller.dart';
+
 class PropertiesController extends GetxController {
   final properties = <Property>[].obs;
 
   @override
   void onInit() {
     super.onInit();
+
     loadProperties();
 
-    /// 🔄 Auto-save on changes
     ever(properties, (_) => saveProperties());
   }
 
-  /// 📥 Load properties
+  /// =====================
+  /// LOAD
+  /// =====================
   void loadProperties() {
     try {
       final saved = LocalStorageService.loadList('properties');
@@ -27,7 +31,9 @@ class PropertiesController extends GetxController {
     }
   }
 
-  /// 💾 Save properties
+  /// =====================
+  /// SAVE
+  /// =====================
   void saveProperties() {
     LocalStorageService.saveList(
       'properties',
@@ -35,25 +41,24 @@ class PropertiesController extends GetxController {
     );
   }
 
-  /// ➕ Add property
+  /// =====================
+  /// ADD PROPERTY
+  /// =====================
   void addProperty(Property property) {
-    final houseNumber = property.houseNumber.trim();
+    final houseNumber = property.houseNumber.trim().toUpperCase();
 
-    /// 🚫 Validate house number
     if (houseNumber.isEmpty) {
-      AppSnackbar.error("House number is required");
+      AppSnackbar.error("House number required");
       return;
     }
 
-    /// 🚫 Validate rent
     if (property.rentAmount <= 0) {
-      AppSnackbar.error("Rent must be greater than 0");
+      AppSnackbar.error("Invalid rent amount");
       return;
     }
 
-    /// 🚫 Prevent duplicates
     final exists = properties.any(
-      (p) => p.houseNumber.toLowerCase().trim() == houseNumber.toLowerCase(),
+      (p) => p.houseNumber.trim().toUpperCase() == houseNumber,
     );
 
     if (exists) {
@@ -61,24 +66,59 @@ class PropertiesController extends GetxController {
       return;
     }
 
-    properties.add(property);
+    properties.add(
+      Property(
+        id: property.id,
+        houseNumber: houseNumber,
+        rentAmount: property.rentAmount,
+      ),
+    );
 
-    AppSnackbar.success("Property added successfully");
+    AppSnackbar.success("Property added");
   }
 
-  /// 🗑 Delete property
+  /// =====================
+  /// DELETE PROPERTY
+  /// =====================
   void deleteProperty(String id) {
+    try {
+      final rentalsController = Get.find<RentalsController>();
+
+      final occupied = rentalsController.rentals.any(
+        (r) => r.propertyId == id && r.isActive,
+      );
+
+      if (occupied) {
+        AppSnackbar.error("Cannot delete occupied property");
+        return;
+      }
+    } catch (_) {}
+
     properties.removeWhere((p) => p.id == id);
 
     AppSnackbar.success("Property deleted");
   }
 
-  /// 🔍 Get property by ID
+  /// =====================
+  /// HELPERS
+  /// =====================
   Property? getById(String id) {
     try {
       return properties.firstWhere((p) => p.id == id);
     } catch (_) {
       return null;
+    }
+  }
+
+  bool isOccupied(String propertyId) {
+    try {
+      final rentalsController = Get.find<RentalsController>();
+
+      return rentalsController.rentals.any(
+        (r) => r.propertyId == propertyId && r.isActive,
+      );
+    } catch (_) {
+      return false;
     }
   }
 }

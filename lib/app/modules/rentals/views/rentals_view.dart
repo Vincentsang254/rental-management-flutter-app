@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:rental_management/app/models/property_model.dart';
 import 'package:rental_management/app/models/rental_model.dart';
 import 'package:rental_management/app/models/tenant_model.dart';
+
 import 'package:rental_management/app/widgets/custom_app_bar.dart';
 import 'package:rental_management/app/widgets/custom_snackbar.dart';
 
@@ -23,40 +24,46 @@ class RentalsView extends StatelessWidget {
     return DateFormat("dd MMM yyyy").format(date);
   }
 
-  /// 🔥 STATUS
   Map<String, dynamic> getPaymentUI(Rental rental) {
     if (rental.overpaid > 0) {
       return {"text": "OVERPAID", "color": Colors.blue};
-    } else if (rental.amountPaid <= 0) {
-      return {"text": "UNPAID", "color": Colors.red};
-    } else if (rental.amountPaid < rental.expectedAmount) {
-      return {"text": "PARTIAL", "color": Colors.orange};
-    } else {
-      return {"text": "PAID", "color": Colors.green};
     }
+
+    if (rental.amountPaid <= 0) {
+      return {"text": "UNPAID", "color": Colors.red};
+    }
+
+    if (rental.amountPaid < rental.expectedAmount) {
+      return {"text": "PARTIAL", "color": Colors.orange};
+    }
+
+    return {"text": "PAID", "color": Colors.green};
   }
 
-  /// 🔥 BALANCE UI
   Map<String, dynamic> getBalanceUI(Rental rental) {
     if (rental.overpaid > 0) {
       return {
-        "text": "CREDIT: ${formatMoney(rental.overpaid)}",
+        "text": "CREDIT ${formatMoney(rental.overpaid)}",
         "color": Colors.blue,
       };
-    } else if (rental.remaining > 0) {
+    }
+
+    if (rental.remaining > 0) {
       return {
-        "text": "BALANCE: ${formatMoney(rental.remaining)}",
+        "text": "BALANCE ${formatMoney(rental.remaining)}",
         "color": Colors.red,
       };
-    } else {
-      return {"text": "NO BALANCE", "color": Colors.green};
     }
+
+    return {"text": "NO BALANCE", "color": Colors.green};
   }
 
   @override
   Widget build(BuildContext context) {
     final rentalsController = Get.find<RentalsController>();
+
     final propertiesController = Get.find<PropertiesController>();
+
     final tenantsController = Get.find<TenantsController>();
 
     return Scaffold(
@@ -81,18 +88,17 @@ class RentalsView extends StatelessWidget {
             final property = propertiesController.properties.firstWhere(
               (p) => p.id == rental.propertyId,
               orElse: () =>
-                  Property(id: '', houseNumber: 'UNKNOWN', rentAmount: 0.0),
+                  Property(id: '', houseNumber: 'UNKNOWN', rentAmount: 0),
             );
 
             final tenant = tenantsController.tenants.firstWhere(
               (t) => t.id == rental.tenantId,
-              orElse: () => Tenant(id: '', name: 'UNKNOWN TENANT', phone: ''),
+              orElse: () => Tenant(id: '', name: 'UNKNOWN', phone: ''),
             );
 
             final status = getPaymentUI(rental);
-            final balanceUI = getBalanceUI(rental);
 
-            final Color statusColor = status["color"];
+            final balanceUI = getBalanceUI(rental);
 
             return Container(
               margin: const EdgeInsets.only(bottom: 16),
@@ -100,26 +106,13 @@ class RentalsView extends StatelessWidget {
               decoration: BoxDecoration(
                 color: rental.isActive ? Colors.white : Colors.grey.shade300,
                 borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
-                    blurRadius: 8,
-                    spreadRadius: 2,
-                  ),
-                ],
               ),
               child: Column(
                 children: [
-                  /// 🔹 HEADER
                   Row(
                     children: [
-                      CircleAvatar(
-                        backgroundColor: Colors.deepPurple.withOpacity(0.1),
-                        child: const Icon(
-                          Icons.person,
-                          color: Colors.deepPurple,
-                        ),
-                      ),
+                      CircleAvatar(child: const Icon(Icons.person)),
+
                       const SizedBox(width: 12),
 
                       Expanded(
@@ -130,31 +123,27 @@ class RentalsView extends StatelessWidget {
                               tenant.name.toUpperCase(),
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
-                                fontSize: 15,
                               ),
                             ),
-                            Text(
-                              property.houseNumber.toUpperCase(),
-                              style: const TextStyle(color: Colors.grey),
-                            ),
+
+                            Text(property.houseNumber),
                           ],
                         ),
                       ),
 
-                      /// STATUS
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 10,
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: statusColor.withOpacity(0.1),
+                          color: status["color"].withOpacity(.10),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
                           status["text"],
                           style: TextStyle(
-                            color: statusColor,
+                            color: status["color"],
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -162,20 +151,18 @@ class RentalsView extends StatelessWidget {
                     ],
                   ),
 
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 15),
 
-                  /// 💰 MONEY
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text("Rent: ${formatMoney(rental.expectedAmount)}"),
-                      Text("Paid: ${formatMoney(rental.amountPaid)}"),
+                      Text("Rent ${formatMoney(rental.expectedAmount)}"),
+                      Text("Paid ${formatMoney(rental.amountPaid)}"),
                     ],
                   ),
 
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 8),
 
-                  /// 🔥 BALANCE
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -186,16 +173,13 @@ class RentalsView extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      Text(
-                        formatDate(rental.billingMonth),
-                        style: const TextStyle(color: Colors.grey),
-                      ),
+
+                      Text(formatDate(rental.billingMonth)),
                     ],
                   ),
 
-                  const Divider(height: 20),
+                  const Divider(),
 
-                  /// ⚙️ ACTIONS
                   Row(
                     children: [
                       Expanded(
@@ -203,14 +187,11 @@ class RentalsView extends StatelessWidget {
                           onPressed: rental.isActive
                               ? () => _showAddPaymentDialog(context, rental)
                               : null,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.deepPurple,
-                          ),
                           child: const Text("Add Payment"),
                         ),
                       ),
 
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 8),
 
                       if (rental.isActive)
                         OutlinedButton(
@@ -221,10 +202,10 @@ class RentalsView extends StatelessWidget {
                         ),
 
                       IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
                         onPressed: () {
                           rentalsController.deleteRental(rental.id);
                         },
+                        icon: const Icon(Icons.delete, color: Colors.red),
                       ),
                     ],
                   ),
@@ -235,37 +216,27 @@ class RentalsView extends StatelessWidget {
         );
       }),
 
-      /// ➕ ADD RENTAL
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: Colors.deepPurple,
         onPressed: () => _showAddRentalSheet(context),
         icon: const Icon(Icons.add),
-        label: const Text(
-          "ADD RENTAL",
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
+        label: const Text("ADD RENTAL"),
       ),
     );
   }
 
-  /// 💰 ADD PAYMENT
+  /// PAYMENT
   void _showAddPaymentDialog(BuildContext context, Rental rental) {
     final controller = Get.find<RentalsController>();
+
     final paymentController = TextEditingController();
 
     Get.defaultDialog(
       title: "Add Payment",
-      content: Column(
-        children: [
-          TextField(
-            controller: paymentController,
-            keyboardType: TextInputType.number,
-            decoration: const InputDecoration(
-              labelText: "Amount Paid",
-              border: OutlineInputBorder(),
-            ),
-          ),
-        ],
+      content: TextField(
+        controller: paymentController,
+        keyboardType: TextInputType.number,
+        decoration: const InputDecoration(labelText: "Amount"),
       ),
       textConfirm: "Save",
       onConfirm: () {
@@ -277,20 +248,22 @@ class RentalsView extends StatelessWidget {
         }
 
         controller.updatePayment(rental.id, amount);
+
         Get.back();
       },
     );
   }
 
-  /// ➕ ADD RENTAL
+  /// ADD RENTAL
   void _showAddRentalSheet(BuildContext context) {
     final rentalsController = Get.find<RentalsController>();
+
     final propertiesController = Get.find<PropertiesController>();
+
     final tenantsController = Get.find<TenantsController>();
 
     Property? selectedProperty;
     Tenant? selectedTenant;
-    final rentController = TextEditingController();
 
     Get.bottomSheet(
       StatefulBuilder(
@@ -301,7 +274,7 @@ class RentalsView extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               decoration: const BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -311,7 +284,7 @@ class RentalsView extends StatelessWidget {
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
 
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 15),
 
                   DropdownButtonFormField<Property>(
                     items: propertiesController.properties
@@ -322,14 +295,30 @@ class RentalsView extends StatelessWidget {
                           ),
                         )
                         .toList(),
-                    onChanged: (val) => setState(() => selectedProperty = val),
-                    decoration: const InputDecoration(
-                      labelText: "Property",
-                      border: OutlineInputBorder(),
-                    ),
+                    onChanged: (val) {
+                      setState(() {
+                        selectedProperty = val;
+                      });
+                    },
+                    decoration: const InputDecoration(labelText: "Property"),
                   ),
 
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
+
+                  if (selectedProperty != null)
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        "Monthly Rent: ${formatMoney(selectedProperty!.rentAmount)}",
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+
+                  const SizedBox(height: 12),
 
                   DropdownButtonFormField<Tenant>(
                     items: tenantsController.tenants
@@ -338,39 +327,23 @@ class RentalsView extends StatelessWidget {
                               DropdownMenuItem(value: t, child: Text(t.name)),
                         )
                         .toList(),
-                    onChanged: (val) => setState(() => selectedTenant = val),
-                    decoration: const InputDecoration(
-                      labelText: "Tenant",
-                      border: OutlineInputBorder(),
-                    ),
+                    onChanged: (val) {
+                      setState(() {
+                        selectedTenant = val;
+                      });
+                    },
+                    decoration: const InputDecoration(labelText: "Tenant"),
                   ),
 
-                  const SizedBox(height: 10),
-
-                  TextField(
-                    controller: rentController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: "Monthly Rent (KES)",
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
 
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: () {
-                        final rent = double.tryParse(
-                          rentController.text.trim(),
-                        );
-
                         if (selectedProperty == null ||
-                            selectedTenant == null ||
-                            rent == null ||
-                            rent <= 0) {
-                          AppSnackbar.error("Fill all fields correctly");
+                            selectedTenant == null) {
+                          AppSnackbar.error("Select property and tenant");
                           return;
                         }
 
@@ -378,12 +351,23 @@ class RentalsView extends StatelessWidget {
                           Rental(
                             id: DateTime.now().millisecondsSinceEpoch
                                 .toString(),
+
                             propertyId: selectedProperty!.id,
+
                             tenantId: selectedTenant!.id,
-                            expectedAmount: rent,
+
+                            /// Auto from room
+                            expectedAmount: selectedProperty!.rentAmount,
+
                             amountPaid: 0,
+
+                            billingMonth: DateTime(
+                              DateTime.now().year,
+                              DateTime.now().month,
+                              1,
+                            ),
+
                             startDate: DateTime.now(),
-                            billingMonth: DateTime.now(),
                           ),
                         );
 
