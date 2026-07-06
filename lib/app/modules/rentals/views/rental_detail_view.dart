@@ -127,6 +127,13 @@ class _RentalDetailViewState extends State<RentalDetailView> {
               const Text('Paid', style: TextStyle(fontWeight: FontWeight.w600)),
               const SizedBox(height: 6),
               Text(formatMoney(rental.amountPaid)),
+              const SizedBox(height: 8),
+              // Show balance or overpaid amount
+              if (rental.remaining > 0) ...[
+                Text('Balance: ${formatMoney(rental.remaining)}', style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
+              ] else if (rental.overpaid > 0) ...[
+                Text('Overpaid: ${formatMoney(rental.overpaid)}', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+              ],
               const SizedBox(height: 12),
               const Text('Billing Month', style: TextStyle(fontWeight: FontWeight.w600)),
               const SizedBox(height: 6),
@@ -174,7 +181,11 @@ class _RentalDetailViewState extends State<RentalDetailView> {
                           isActive: isActive,
                         );
 
-                        rentalsController.updateRental(updated);
+                        final ok = rentalsController.updateRental(updated);
+                        if (ok) {
+                          // keep the UI showing updated balance/overpaid
+                          setState(() {});
+                        }
                       },
                       child: const Text('Save Changes'),
                     ),
