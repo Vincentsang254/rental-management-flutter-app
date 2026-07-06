@@ -28,19 +28,27 @@ class RentalsController extends GetxController {
     LocalStorageService.saveList('rentals', rentals.map((e) => e.toMap()).toList());
   }
 
-  void addRental(Rental rental) {
+  /// Returns true on success, false on failure (e.g., property occupied).
+  bool addRental(Rental rental) {
     if (rental.id.trim().isEmpty) {
       AppSnackbar.error('Invalid rental ID');
-      return;
+      return false;
+    }
+
+    if (isPropertyOccupied(rental.propertyId)) {
+      AppSnackbar.error('Property is currently occupied by an active rental. Choose another property.');
+      return false;
     }
 
     rentals.add(rental);
     AppSnackbar.success('Rental added');
+    return true;
   }
 
-  void deleteRental(String id) {
-    rentals.removeWhere((r) => r.id == id);
-    AppSnackbar.success('Rental deleted');
+  bool deleteRental(String id) {
+    final removed = rentals.removeWhere((r) => r.id == id) > 0;
+    if (removed) AppSnackbar.success('Rental deleted');
+    return removed;
   }
 
   void addPayment(String id, double amount) {
@@ -53,7 +61,6 @@ class RentalsController extends GetxController {
 
   List<Rental> get activeRentals => rentals.where((r) => r.isActive).toList();
 
-  // Get rental by ID
   Rental? getById(String id) {
     try {
       return rentals.firstWhere((r) => r.id == id);
@@ -62,8 +69,14 @@ class RentalsController extends GetxController {
     }
   }
 
-  // Update or replace a rental
-  void updateRental(Rental updated) {
+  /// Update or replace a rental. Returns true on success, false if blocked (e.g., occupancy).
+  bool updateRental(Rental updated) {
+    // Check occupancy: block if another active rental holds the same property
+    if (isPropertyOccupied(updated.propertyId, excludeRentalId: updated.id)) {
+      AppSnackbar.error('Property is currently occupied by another active rental. Choose a different property.');
+      return false;
+    }
+
     final idx = rentals.indexWhere((r) => r.id == updated.id);
     if (idx == -1) {
       rentals.add(updated);
@@ -72,5 +85,15 @@ class RentalsController extends GetxController {
     }
 
     AppSnackbar.success('Rental updated');
+    return true;
+  }
+
+  /// Checks whether a property is occupied by an active rental.
+  /// If excludeRentalId is provided, that rental is ignored (useful when editing).
+  bool isPropertyOccupied(String propertyId, {String? excludeRentalId}) {
+    return rentals.any((r) =>
+        r.propertyId == propertyId &&
+        r.isActive &&
+        (excludeRentalId == null || r.id != excludeRentalId));
   }
 }

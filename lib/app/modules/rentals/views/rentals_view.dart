@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import 'package:rental_management/app/widgets/app_scaffold.dart';
 import 'package:rental_management/app/widgets/primary_card.dart';
+import 'package:rental_management/app/widgets/custom_snackbar.dart';
 
 import 'package:rental_management/app/modules/rentals/controllers/rentals_controller.dart';
 import 'package:rental_management/app/models/rental_model.dart';
@@ -12,6 +13,7 @@ import 'package:rental_management/app/models/tenant_model.dart';
 import 'package:rental_management/app/modules/properties/controllers/properties_controller.dart';
 import 'package:rental_management/app/modules/tenants/controllers/tenants_controller.dart';
 import 'package:rental_management/app/modules/rentals/views/rental_detail_view.dart';
+import 'package:rental_management/app/widgets/month_picker.dart';
 
 class RentalsView extends StatelessWidget {
   const RentalsView({super.key});
@@ -154,6 +156,7 @@ class RentalsView extends StatelessWidget {
 
     String? selectedProperty;
     String? selectedTenant;
+    DateTime billingMonth = DateTime.now();
     final amountController = TextEditingController();
 
     Get.bottomSheet(
@@ -194,6 +197,17 @@ class RentalsView extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
                 TextField(controller: amountController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Expected amount', border: OutlineInputBorder())),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Text(DateFormat.yMMMM().format(billingMonth)),
+                    const Spacer(),
+                    TextButton(onPressed: () async {
+                      final picked = await showMonthPickerDialog(context, initial: billingMonth);
+                      if (picked != null) setState(() => billingMonth = picked);
+                    }, child: const Text('Change')),
+                  ],
+                ),
                 const SizedBox(height: 16),
                 SizedBox(
                   width: double.infinity,
@@ -208,17 +222,19 @@ class RentalsView extends StatelessWidget {
                         return;
                       }
 
-                      controller.addRental(
+                      final ok = controller.addRental(
                         Rental(
                           id: DateTime.now().millisecondsSinceEpoch.toString(),
                           propertyId: pid,
                           tenantId: tid,
                           expectedAmount: amt,
                           amountPaid: 0,
-                          billingMonth: DateTime.now(),
+                          billingMonth: billingMonth,
                           startDate: DateTime.now(),
                         ),
                       );
+
+                      if (!ok) return; // blocked (occupied)
 
                       Get.back();
                     },
