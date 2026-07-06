@@ -6,10 +6,11 @@ import 'package:rental_management/app/widgets/app_scaffold.dart';
 import 'package:rental_management/app/widgets/primary_card.dart';
 import 'package:rental_management/app/widgets/custom_snackbar.dart';
 
-import '../controllers/rentals_controller.dart';
-import '../../properties/controllers/properties_controller.dart';
-import '../../tenants/controllers/tenants_controller.dart';
-import '../../models/rental_model.dart';
+import 'package:rental_management/app/modules/rentals/controllers/rentals_controller.dart';
+import 'package:rental_management/app/modules/properties/controllers/properties_controller.dart';
+import 'package:rental_management/app/modules/tenants/controllers/tenants_controller.dart';
+import 'package:rental_management/app/models/rental_model.dart';
+import 'package:rental_management/app/widgets/month_picker.dart';
 
 class RentalDetailView extends StatefulWidget {
   final String rentalId;
@@ -63,19 +64,7 @@ class _RentalDetailViewState extends State<RentalDetailView> {
   }
 
   Future<void> _pickBillingMonth() async {
-    final now = DateTime.now();
-    final initialDate = billingMonth;
-    final firstDate = DateTime(now.year - 5, 1);
-    final lastDate = DateTime(now.year + 5, 12);
-
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: initialDate,
-      firstDate: firstDate,
-      lastDate: lastDate,
-      helpText: 'Select billing month (pick any day in month)',
-    );
-
+    final picked = await showMonthPickerDialog(context, initial: billingMonth);
     if (picked != null) {
       setState(() {
         billingMonth = DateTime(picked.year, picked.month, 1);

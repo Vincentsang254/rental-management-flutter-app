@@ -46,7 +46,9 @@ class RentalsController extends GetxController {
   }
 
   bool deleteRental(String id) {
-    final removed = rentals.removeWhere((r) => r.id == id) > 0;
+    final before = rentals.length;
+    rentals.removeWhere((r) => r.id == id);
+    final removed = rentals.length < before;
     if (removed) AppSnackbar.success('Rental deleted');
     return removed;
   }
