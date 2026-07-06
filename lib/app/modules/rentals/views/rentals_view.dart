@@ -11,6 +11,7 @@ import '../../models/property_model.dart';
 import '../../models/tenant_model.dart';
 import '../../properties/controllers/properties_controller.dart';
 import '../../tenants/controllers/tenants_controller.dart';
+import 'rental_detail_view.dart';
 
 class RentalsView extends StatelessWidget {
   const RentalsView({super.key});
