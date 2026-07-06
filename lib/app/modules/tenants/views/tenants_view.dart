@@ -4,9 +4,8 @@ import 'package:get/get.dart';
 import 'package:rental_management/app/widgets/app_scaffold.dart';
 import 'package:rental_management/app/widgets/primary_card.dart';
 import 'package:rental_management/app/widgets/custom_snackbar.dart';
-
-import '../controllers/tenants_controller.dart';
-import '../../models/tenant_model.dart';
+import 'package:rental_management/app/modules/tenants/controllers/tenants_controller.dart';
+import 'package:rental_management/app/models/tenant_model.dart';
 
 class TenantsView extends StatelessWidget {
   const TenantsView({super.key});

@@ -5,13 +5,13 @@ import 'package:intl/intl.dart';
 import 'package:rental_management/app/widgets/app_scaffold.dart';
 import 'package:rental_management/app/widgets/primary_card.dart';
 
-import '../controllers/rentals_controller.dart';
-import '../../models/rental_model.dart';
-import '../../models/property_model.dart';
-import '../../models/tenant_model.dart';
-import '../../properties/controllers/properties_controller.dart';
-import '../../tenants/controllers/tenants_controller.dart';
-import 'rental_detail_view.dart';
+import 'package:rental_management/app/modules/rentals/controllers/rentals_controller.dart';
+import 'package:rental_management/app/models/rental_model.dart';
+import 'package:rental_management/app/models/property_model.dart';
+import 'package:rental_management/app/models/tenant_model.dart';
+import 'package:rental_management/app/modules/properties/controllers/properties_controller.dart';
+import 'package:rental_management/app/modules/tenants/controllers/tenants_controller.dart';
+import 'package:rental_management/app/modules/rentals/views/rental_detail_view.dart';
 
 class RentalsView extends StatelessWidget {
   const RentalsView({super.key});
