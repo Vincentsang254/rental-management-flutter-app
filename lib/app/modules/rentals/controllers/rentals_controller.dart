@@ -52,4 +52,25 @@ class RentalsController extends GetxController {
   }
 
   List<Rental> get activeRentals => rentals.where((r) => r.isActive).toList();
+
+  // Get rental by ID
+  Rental? getById(String id) {
+    try {
+      return rentals.firstWhere((r) => r.id == id);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // Update or replace a rental
+  void updateRental(Rental updated) {
+    final idx = rentals.indexWhere((r) => r.id == updated.id);
+    if (idx == -1) {
+      rentals.add(updated);
+    } else {
+      rentals[idx] = updated;
+    }
+
+    AppSnackbar.success('Rental updated');
+  }
 }

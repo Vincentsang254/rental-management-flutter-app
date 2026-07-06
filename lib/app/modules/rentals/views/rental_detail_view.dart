@@ -28,6 +28,10 @@ class _RentalDetailViewState extends State<RentalDetailView> {
   final amountController = TextEditingController();
   bool isActive = true;
 
+  String? selectedPropertyId;
+  String? selectedTenantId;
+  late DateTime billingMonth;
+
   @override
   void initState() {
     super.initState();
@@ -39,6 +43,11 @@ class _RentalDetailViewState extends State<RentalDetailView> {
     if (rental != null) {
       amountController.text = rental.expectedAmount.toStringAsFixed(0);
       isActive = rental.isActive;
+      selectedPropertyId = rental.propertyId;
+      selectedTenantId = rental.tenantId;
+      billingMonth = rental.billingMonth;
+    } else {
+      billingMonth = DateTime.now();
     }
   }
 
@@ -51,6 +60,27 @@ class _RentalDetailViewState extends State<RentalDetailView> {
   String formatMoney(double value) {
     final f = NumberFormat.currency(locale: 'en_US', symbol: 'KES ');
     return f.format(value);
+  }
+
+  Future<void> _pickBillingMonth() async {
+    final now = DateTime.now();
+    final initialDate = billingMonth;
+    final firstDate = DateTime(now.year - 5, 1);
+    final lastDate = DateTime(now.year + 5, 12);
+
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: firstDate,
+      lastDate: lastDate,
+      helpText: 'Select billing month (pick any day in month)',
+    );
+
+    if (picked != null) {
+      setState(() {
+        billingMonth = DateTime(picked.year, picked.month, 1);
+      });
+    }
   }
 
   @override
@@ -67,6 +97,14 @@ class _RentalDetailViewState extends State<RentalDetailView> {
     final property = propertiesController.getById(rental.propertyId);
     final tenant = tenantsController.getById(rental.tenantId);
 
+    final propertyItems = propertiesController.properties
+        .map((p) => DropdownMenuItem(value: p.id, child: Text(p.houseNumber)))
+        .toList();
+
+    final tenantItems = tenantsController.tenants
+        .map((t) => DropdownMenuItem(value: t.id, child: Text(t.name)))
+        .toList();
+
     return AppScaffold(
       title: 'Rental Details',
       body: SingleChildScrollView(
@@ -75,25 +113,41 @@ class _RentalDetailViewState extends State<RentalDetailView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Property', style: Theme.of(context).textTheme.titleMedium),
+              const Text('Property', style: TextStyle(fontWeight: FontWeight.w600)),
               const SizedBox(height: 6),
-              Text(property?.houseNumber ?? rental.propertyId, style: const TextStyle(fontWeight: FontWeight.bold)),
+              DropdownButtonFormField<String>(
+                value: selectedPropertyId,
+                items: propertyItems,
+                onChanged: (v) => setState(() => selectedPropertyId = v),
+                decoration: const InputDecoration(border: OutlineInputBorder()),
+              ),
               const SizedBox(height: 12),
-              Text('Tenant', style: Theme.of(context).textTheme.titleMedium),
+              const Text('Tenant', style: TextStyle(fontWeight: FontWeight.w600)),
               const SizedBox(height: 6),
-              Text(tenant?.name ?? rental.tenantId, style: const TextStyle(fontWeight: FontWeight.bold)),
+              DropdownButtonFormField<String>(
+                value: selectedTenantId,
+                items: tenantItems,
+                onChanged: (v) => setState(() => selectedTenantId = v),
+                decoration: const InputDecoration(border: OutlineInputBorder()),
+              ),
               const SizedBox(height: 12),
-              Text('Expected Amount', style: Theme.of(context).textTheme.titleMedium),
+              const Text('Expected Amount', style: TextStyle(fontWeight: FontWeight.w600)),
               const SizedBox(height: 6),
               TextField(controller: amountController, keyboardType: TextInputType.number, decoration: const InputDecoration(border: OutlineInputBorder())),
               const SizedBox(height: 12),
-              Text('Paid', style: Theme.of(context).textTheme.titleMedium),
+              const Text('Paid', style: TextStyle(fontWeight: FontWeight.w600)),
               const SizedBox(height: 6),
               Text(formatMoney(rental.amountPaid)),
               const SizedBox(height: 12),
-              Text('Billing Month', style: Theme.of(context).textTheme.titleMedium),
+              const Text('Billing Month', style: TextStyle(fontWeight: FontWeight.w600)),
               const SizedBox(height: 6),
-              Text(DateFormat.yMMMM().format(rental.billingMonth)),
+              Row(
+                children: [
+                  Text(DateFormat.yMMMM().format(billingMonth)),
+                  const Spacer(),
+                  TextButton(onPressed: _pickBillingMonth, child: const Text('Change')),
+                ],
+              ),
               const SizedBox(height: 12),
               Row(
                 children: [
@@ -114,25 +168,24 @@ class _RentalDetailViewState extends State<RentalDetailView> {
                           return;
                         }
 
-                        // update expectedAmount and isActive by replacing the rental
-                        final idx = rentalsController.rentals.indexWhere((r) => r.id == rental.id);
-                        if (idx != -1) {
-                          final updated = rentalsController.rentals[idx].copyWith(isActive: isActive);
-                          // we cannot change expectedAmount via copyWith, so create a new Rental
-                          final newRental = Rental(
-                            id: updated.id,
-                            propertyId: updated.propertyId,
-                            tenantId: updated.tenantId,
-                            expectedAmount: amt,
-                            amountPaid: updated.amountPaid,
-                            billingMonth: updated.billingMonth,
-                            startDate: updated.startDate,
-                            isActive: isActive,
-                          );
-
-                          rentalsController.rentals[idx] = newRental;
-                          AppSnackbar.success('Rental updated');
+                        if (selectedPropertyId == null || selectedTenantId == null) {
+                          AppSnackbar.error('Select property and tenant');
+                          return;
                         }
+
+                        // update rental
+                        final updated = Rental(
+                          id: rental.id,
+                          propertyId: selectedPropertyId!,
+                          tenantId: selectedTenantId!,
+                          expectedAmount: amt,
+                          amountPaid: rental.amountPaid,
+                          billingMonth: billingMonth,
+                          startDate: rental.startDate,
+                          isActive: isActive,
+                        );
+
+                        rentalsController.updateRental(updated);
                       },
                       child: const Text('Save Changes'),
                     ),
