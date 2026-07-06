@@ -1,70 +1,38 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 
-import 'package:rental_management/app/models/tenant_model.dart';
-import 'package:rental_management/app/widgets/custom_app_bar.dart';
-import 'package:rental_management/app/widgets/custom_snackbar.dart';
+import 'package:rental_management/app/widgets/app_scaffold.dart';
+import 'package:rental_management/app/widgets/primary_card.dart';
 
-import '../controllers/tenants_controller.dart';
+import '../controllers/rentals_controller.dart';
+import '../../models/rental_model.dart';
+import '../../models/property_model.dart';
+import '../../models/tenant_model.dart';
 
-/// 🔤 Auto-capitalize each word properly
-class CapitalizeWordsFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
-    final text = newValue.text;
+class RentalsView extends StatelessWidget {
+  const RentalsView({super.key});
 
-    final capitalized = text
-        .split(' ')
-        .where((word) => word.isNotEmpty)
-        .map((word) => word[0].toUpperCase() + word.substring(1).toLowerCase())
-        .join(' ');
-
-    return TextEditingValue(text: capitalized, selection: newValue.selection);
-  }
-}
-
-class TenantsView extends StatelessWidget {
-  const TenantsView({super.key});
-
-  /// 🔤 Backup formatter (used before saving)
-  String formatName(String name) {
-    return name
-        .trim()
-        .split(" ")
-        .where((e) => e.isNotEmpty)
-        .map((word) => word[0].toUpperCase() + word.substring(1).toLowerCase())
-        .join(" ");
-  }
-
-  /// 📱 Clean phone input
-  String formatPhone(String phone) {
-    return phone.replaceAll(" ", "").trim();
+  String formatMoney(double value) {
+    final f = NumberFormat.currency(locale: 'en_US', symbol: 'KES ');
+    return f.format(value);
   }
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<TenantsController>();
+    final controller = Get.find<RentalsController>();
 
-    return Scaffold(
-      backgroundColor: Colors.grey.shade100,
-      appBar: const CustomAppBar(title: "TENANTS"),
-
+    return AppScaffold(
+      title: 'Rentals',
       body: Obx(() {
-        if (controller.tenants.isEmpty) {
-          return const Center(
+        if (controller.rentals.isEmpty) {
+          return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.person_off, size: 70, color: Colors.grey),
-                SizedBox(height: 10),
-                Text(
-                  "NO TENANTS YET",
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
+              children: const [
+                Icon(Icons.assignment_outlined, size: 72, color: Colors.grey),
+                SizedBox(height: 12),
+                Text('No rentals', style: TextStyle(color: Colors.grey)),
               ],
             ),
           );
@@ -72,188 +40,153 @@ class TenantsView extends StatelessWidget {
 
         return ListView.builder(
           padding: const EdgeInsets.all(16),
-          itemCount: controller.tenants.length,
+          itemCount: controller.rentals.length,
           itemBuilder: (context, index) {
-            final tenant = controller.tenants[index];
+            final r = controller.rentals[index];
 
-            return Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    spreadRadius: 2,
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    backgroundColor: Colors.deepPurple.withOpacity(0.1),
-                    child: const Icon(Icons.person, color: Colors.deepPurple),
-                  ),
-                  const SizedBox(width: 12),
-
-                  /// DETAILS
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: PrimaryCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
                       children: [
-                        Text(
-                          tenant.name.toUpperCase(),
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                          ),
+                        CircleAvatar(backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(.12), child: Icon(Icons.home, color: Theme.of(context).colorScheme.primary)),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text('Property: ${r.propertyId}', style: const TextStyle(fontWeight: FontWeight.bold)),
                         ),
-
-                        const SizedBox(height: 6),
-
-                        GestureDetector(
-                          onTap: () {
-                            Clipboard.setData(
-                              ClipboardData(text: tenant.phone),
-                            );
-                            AppSnackbar.success("Phone copied");
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 5,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade200,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(
-                                  Icons.phone,
-                                  size: 14,
-                                  color: Colors.grey,
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  tenant.phone,
-                                  style: const TextStyle(fontSize: 13),
-                                ),
-                              ],
-                            ),
-                          ),
+                        Text(r.isActive ? 'Active' : 'Inactive', style: TextStyle(color: r.isActive ? Colors.green : Colors.grey, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text('Tenant: ${r.tenantId}'),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Text('Due: ${formatMoney(r.expectedAmount)}', style: const TextStyle(fontWeight: FontWeight.w600)),
+                        const SizedBox(width: 12),
+                        Text('Paid: ${formatMoney(r.amountPaid)}'),
+                        const Spacer(),
+                        Text(r.balance > 0 ? 'Balance: ${formatMoney(r.balance)}' : 'Settled', style: TextStyle(color: r.balance > 0 ? Colors.orange : Colors.green, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        ElevatedButton(
+                          onPressed: () => _showAddPaymentSheet(context, r),
+                          child: const Text('Add Payment'),
+                        ),
+                        const SizedBox(width: 8),
+                        TextButton(
+                          onPressed: () {},
+                          child: const Text('Details'),
                         ),
                       ],
                     ),
-                  ),
-
-                  IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.red),
-                    onPressed: () {
-                      controller.deleteTenant(tenant.id);
-                    },
-                  ),
-                ],
+                  ],
+                ),
               ),
             );
           },
         );
       }),
-
-      /// ➕ FLOATING BUTTON
       floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: Colors.deepPurple,
-        onPressed: () => _showAddTenantSheet(context),
+        backgroundColor: Theme.of(context).colorScheme.primary,
         icon: const Icon(Icons.add),
-        label: const Text(
-          "ADD TENANT",
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
+        label: const Text('Add Rental'),
+        onPressed: () => _showAddRentalSheet(context),
       ),
     );
   }
 
-  void _showAddTenantSheet(BuildContext context) {
-    final controller = Get.find<TenantsController>();
-
-    final nameController = TextEditingController();
-    final phoneController = TextEditingController();
+  void _showAddPaymentSheet(BuildContext context, Rental rental) {
+    final controller = Get.find<RentalsController>();
+    final amountController = TextEditingController();
 
     Get.bottomSheet(
       Padding(
         padding: MediaQuery.of(context).viewInsets,
         child: Container(
           padding: const EdgeInsets.all(16),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-          ),
+          decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(18))),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                "ADD TENANT",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-
-              const SizedBox(height: 12),
-
-              /// NAME FIELD (AUTO CAPITALIZE)
-              TextField(
-                controller: nameController,
-                textCapitalization: TextCapitalization.words,
-                inputFormatters: [CapitalizeWordsFormatter()],
-                decoration: const InputDecoration(
-                  labelText: "FULL NAME",
-                  border: OutlineInputBorder(),
-                ),
-              ),
-
-              const SizedBox(height: 10),
-
-              /// PHONE FIELD (DIGITS ONLY)
-              TextField(
-                controller: phoneController,
-                keyboardType: TextInputType.phone,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: const InputDecoration(
-                  labelText: "PHONE NUMBER",
-                  border: OutlineInputBorder(),
-                ),
-              ),
-
+              const Text('Add payment', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 14),
+              TextField(controller: amountController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Amount', border: OutlineInputBorder())),
               const SizedBox(height: 16),
-
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.deepPurple,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                  ),
                   onPressed: () {
-                    final name = formatName(nameController.text);
-                    final phone = formatPhone(phoneController.text);
+                    final amt = double.tryParse(amountController.text.trim());
+                    if (amt == null || amt <= 0) return;
+                    controller.addPayment(rental.id, amt);
+                    Get.back();
+                  },
+                  child: const Text('Save'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      isScrollControlled: true,
+    );
+  }
 
-                    if (name.isEmpty || phone.isEmpty) {
-                      AppSnackbar.error("Fill all fields");
-                      return;
-                    }
+  void _showAddRentalSheet(BuildContext context) {
+    final controller = Get.find<RentalsController>();
+    final propertyController = TextEditingController();
+    final tenantController = TextEditingController();
+    final amountController = TextEditingController();
 
-                    controller.addTenant(
-                      Tenant(
+    Get.bottomSheet(
+      Padding(
+        padding: MediaQuery.of(context).viewInsets,
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(18))),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Add rental', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 14),
+              TextField(controller: propertyController, decoration: const InputDecoration(labelText: 'Property ID', border: OutlineInputBorder())),
+              const SizedBox(height: 10),
+              TextField(controller: tenantController, decoration: const InputDecoration(labelText: 'Tenant ID', border: OutlineInputBorder())),
+              const SizedBox(height: 10),
+              TextField(controller: amountController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Expected amount', border: OutlineInputBorder())),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    final pid = propertyController.text.trim();
+                    final tid = tenantController.text.trim();
+                    final amt = double.tryParse(amountController.text.trim());
+
+                    if (pid.isEmpty || tid.isEmpty || amt == null || amt <= 0) return;
+
+                    controller.addRental(
+                      Rental(
                         id: DateTime.now().millisecondsSinceEpoch.toString(),
-                        name: name,
-                        phone: phone,
+                        propertyId: pid,
+                        tenantId: tid,
+                        expectedAmount: amt,
+                        amountPaid: 0,
+                        billingMonth: DateTime.now(),
+                        startDate: DateTime.now(),
                       ),
                     );
 
                     Get.back();
                   },
-                  child: const Text("SAVE TENANT"),
+                  child: const Text('Save'),
                 ),
               ),
             ],
